@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run dev:*)",
+      "WebSearch",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(node -e:*)",
+      "Bash(node generate-icons.js:*)",
+      "Bash(node generate-png-icons.js:*)",
+      "WebFetch(domain:web.dev)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,24 @@
+I am want you to create a gigworker tracking app that does the following:
+	- Let the user add income for specific days, let it have the following
+		- Gig such as AmazonFlex, DoorDash, and Walmart Spark
+			- For Amazon Flex I want there to be an additional field that shows the user how many more hours that can work that week, as Amazon has a rolling 40 hour work week and an 8 hour a day limit
+		- Block start, end, and length
+			- If a user enters two of the fields, ex. start time and block length or block end time and start time, auto calculate the missing information
+		- Let user add the amount the block/day income was
+			- Allow user to edit information just incase they need to make adjustments
+		- Have a field that lets the user add notes on the block
+		- Show the income amount for each added gig, for example only show Amazon if that is the only income added but if multiple income gig sources are added show all added
+	- I want it to have a monthly calendar that allows the user to click on each day and be taken to that day
+		- Allow the user to add and edit information that pertains to that day
+	- Add a module that lets the user add daily mileage and gas expenses, as per above allow editing of that information as needed
+		- Calculate the profit for that day, which would take the information from the income modulue and gas expense modules
+		- Show the price per mileage, for example if someone made $133 for the day and drove 100 miles, calculate the earnings per mile
+	- Add a monthly expense module, that allows the user to add and edit their monthly bills that don't change every month
+		- In the same module add another section for expenses that can change month to month such as groceries or if the user has a payment plan such as affirm, klarna, or paypal pay in 4
+			- In the variable expense module add a section for the user to add what the first intial cost was if it is a payment plan, what number payment they are on and calculate how many more payments are due and how much is left due
+		- When any of these expenses are completed remove them from the total due for the month
+			- Allow the user to check off payments if they decide to pay them early
+	- Keep of this information in a database for easy storage and add a way for the user to export and import data into the app
+	- Have it show on the calendar if the day was profitable or not, have it be the profit number in green if it was and red if not
+	- I want the app to look modern, work well across web and mobile, make the colors pop, have a dark and light mode toggle, have the colors conform to each mode 
+	separately, if the color doesn't fit for the dark theme but does for the light, keep it for the light but use something else for the dark. Do not use the color purple and make everything stand out but easy to read
