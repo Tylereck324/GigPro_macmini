@@ -17,7 +17,7 @@ interface IncomeEntryProps {
 }
 
 export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeEntryProps) {
-  const [platform, setPlatform] = useState<GigPlatform>(initialData?.platform ?? 'AmazonFlex');
+  const [platform, setPlatform] = useState<GigPlatform | ''>(initialData?.platform ?? '');
   const [customPlatformName, setCustomPlatformName] = useState(initialData?.customPlatformName ?? '');
   const [timeData, setTimeData] = useState<TimeData>({
     blockStartTime: initialData?.blockStartTime ?? null,
@@ -30,6 +30,11 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!platform) {
+      toast.error('Please select a platform');
+      return;
+    }
 
     if (!amount || parseFloat(amount) <= 0) {
       toast.error('Please enter a valid amount');
@@ -56,7 +61,7 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
 
       // Reset form if this is a new entry
       if (!initialData) {
-        setPlatform('AmazonFlex');
+        setPlatform('');
         setCustomPlatformName('');
         setTimeData({ blockStartTime: null, blockEndTime: null, blockLength: null });
         setAmount('');
@@ -83,7 +88,7 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
           label="Gig Platform"
           value={platform}
           onChange={(e) => setPlatform(e.target.value as GigPlatform)}
-          options={GIG_PLATFORMS}
+          options={[{ value: '', label: 'Select a platform', disabled: true }, ...GIG_PLATFORMS]}
           required
           fullWidth
         />
@@ -106,13 +111,19 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
 
         {/* Amount */}
         <Input
-          type="number"
+          type="text"
           label="Amount Earned"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            // Allow empty string, or a string that looks like a valid number
+            if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+              setAmount(newValue);
+            }
+          }}
           placeholder="150.00"
-          min="0.01"
-          step="0.01"
+          inputMode="numeric" // For mobile numeric keyboard
+          pattern="[0-9]*[.]?[0-9]*" // Basic pattern for numeric validation
           required
           fullWidth
         />

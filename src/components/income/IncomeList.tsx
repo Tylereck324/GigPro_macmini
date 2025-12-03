@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Card, Button, ConfirmDialog } from '../ui';
@@ -21,6 +21,7 @@ import { formatCurrency } from '@/lib/utils/profitCalculations';
 import type { IncomeEntry } from '@/types/income';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { List } from 'react-window';
 
 // ============================================================================
 // Types
@@ -150,6 +151,12 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   };
 
   // ============================================================================
+  // Memoized Data - Must be before early return
+  // ============================================================================
+
+  const byPlatform = useMemo(() => groupEntriesByPlatform(entries), [entries]);
+
+  // ============================================================================
   // Empty State
   // ============================================================================
 
@@ -164,10 +171,66 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   }
 
   // ============================================================================
-  // Render
+  // Render Item Component
   // ============================================================================
 
-  const byPlatform = groupEntriesByPlatform(entries);
+  const renderEntry = (entry: IncomeEntry) => (
+    <div
+      key={entry.id}
+      className="p-4 hover:bg-surfaceHover transition-colors border-b border-border last:border-b-0"
+    >
+      <div className="flex items-start justify-between gap-4">
+        {/* Entry Details */}
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-4">
+            <span className="text-lg font-semibold text-text">
+              {formatCurrency(entry.amount)}
+            </span>
+            {entry.blockLength && (
+              <span className="text-sm text-textSecondary">
+                {formatDuration(entry.blockLength)}
+              </span>
+            )}
+          </div>
+
+          {(entry.blockStartTime || entry.blockEndTime) && (
+            <div className="text-sm text-textSecondary">
+              {formatTime(entry.blockStartTime)} - {formatTime(entry.blockEndTime)}
+            </div>
+          )}
+
+          {entry.notes && (
+            <p className="text-sm text-textSecondary italic">
+              {entry.notes}
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(entry)}
+            className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+            aria-label="Edit entry"
+          >
+            <PencilIcon className="h-5 w-5 text-primary" />
+          </button>
+          <button
+            onClick={() => handleDelete(entry.id)}
+            disabled={deletingId === entry.id}
+            className="p-2 rounded-lg hover:bg-surface transition-colors disabled:opacity-50 min-h-[44px] min-w-[44px]"
+            aria-label="Delete entry"
+          >
+            <TrashIcon className="h-5 w-5 text-danger" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================================
+  // Render
+  // ============================================================================
 
   return (
     <div className="space-y-4">
@@ -177,6 +240,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
         const total = platformEntries.reduce((sum, e) => sum + e.amount, 0);
         const firstEntry = platformEntries[0];
         const platform = firstEntry.platform;
+        const shouldVirtualize = platformEntries.length > 10;
 
         return (
           <Card key={groupKey} padding="none">
@@ -192,62 +256,24 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
               </div>
             </div>
 
-            {/* Entry List */}
-            <div className="divide-y divide-border">
-              {platformEntries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="p-4 hover:bg-surfaceHover transition-colors fade-in-on-scroll"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    {/* Entry Details */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-semibold text-text">
-                          {formatCurrency(entry.amount)}
-                        </span>
-                        {entry.blockLength && (
-                          <span className="text-sm text-textSecondary">
-                            {formatDuration(entry.blockLength)}
-                          </span>
-                        )}
-                      </div>
-
-                      {(entry.blockStartTime || entry.blockEndTime) && (
-                        <div className="text-sm text-textSecondary">
-                          {formatTime(entry.blockStartTime)} - {formatTime(entry.blockEndTime)}
-                        </div>
-                      )}
-
-                      {entry.notes && (
-                        <p className="text-sm text-textSecondary italic">
-                          {entry.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onEdit(entry)}
-                        className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                        aria-label="Edit entry"
-                      >
-                        <PencilIcon className="h-5 w-5 text-primary" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(entry.id)}
-                        disabled={deletingId === entry.id}
-                        className="p-2 rounded-lg hover:bg-surface transition-colors disabled:opacity-50 min-h-[44px] min-w-[44px]"
-                        aria-label="Delete entry"
-                      >
-                        <TrashIcon className="h-5 w-5 text-danger" />
-                      </button>
-                    </div>
+            {/* Entry List - Virtualized for >10 items */}
+            {shouldVirtualize ? (
+              <List
+                defaultHeight={Math.min(platformEntries.length * 120, 600)}
+                rowCount={platformEntries.length}
+                rowHeight={120}
+                rowProps={{}}
+                rowComponent={({ index, style }) => (
+                  <div style={style}>
+                    {renderEntry(platformEntries[index])}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              />
+            ) : (
+              <div>
+                {platformEntries.map((entry) => renderEntry(entry))}
+              </div>
+            )}
           </Card>
         );
       })}

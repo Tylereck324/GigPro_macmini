@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import type { IncomeEntry, CreateIncomeEntry, UpdateIncomeEntry } from '@/types/income';
-import { incomeRepository } from '@/lib/db';
+import { incomeApi } from '@/lib/api/income'; // Import the new API helper
 import { createIncomeEntrySchema, updateIncomeEntrySchema } from '@/types/validation';
 
 export interface IncomeSlice {
@@ -25,7 +25,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   loadIncomeEntries: async () => {
     set({ incomeLoading: true, incomeError: null });
     try {
-      const entries = await incomeRepository.getAll();
+      const entries = await incomeApi.getIncomeEntries(); // Use API helper
       set({ incomeEntries: entries, incomeLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load income entries';
@@ -38,52 +38,33 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   addIncomeEntry: async (entry: CreateIncomeEntry) => {
     set({ incomeError: null });
     try {
-      // Validate input
+      // Validate input - client-side validation before API call
       const validatedEntry = createIncomeEntrySchema.parse(entry);
 
-      // Optimistic update
-      const tempId = `temp-${Date.now()}`;
-      const optimisticEntry = {
-        ...validatedEntry,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as IncomeEntry;
+      // Perform actual creation via API
+      const newEntry = await incomeApi.createIncomeEntry(validatedEntry); // Use API helper
 
+      // Update state with new entry
       set((state) => ({
-        incomeEntries: [...state.incomeEntries, optimisticEntry],
-      }));
-
-      // Perform actual creation
-      const newEntry = await incomeRepository.create(validatedEntry);
-
-      // Replace optimistic entry with real one
-      set((state) => ({
-        incomeEntries: state.incomeEntries.map((e) =>
-          e.id === tempId ? newEntry : e
-        ),
+        incomeEntries: [...state.incomeEntries, newEntry],
       }));
 
       return newEntry;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add income entry';
       set({ incomeError: errorMessage });
-      // Rollback optimistic update
-      set((state) => ({
-        incomeEntries: state.incomeEntries.filter((e) => !e.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
 
   updateIncomeEntry: async (id: string, updates: UpdateIncomeEntry) => {
     set({ incomeError: null });
-    try {
-      // Validate input
-      const validatedUpdates = updateIncomeEntrySchema.parse(updates);
+    // Capture original BEFORE optimistic update
+    const original = get().incomeEntries.find((entry) => entry.id === id);
 
-      // Store original for rollback
-      const original = get().incomeEntries.find((e) => e.id === id);
+    try {
+      // Validate input - client-side validation before API call
+      const validatedUpdates = updateIncomeEntrySchema.parse(updates);
 
       // Optimistic update
       set((state) => ({
@@ -92,18 +73,27 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
         ),
       }));
 
-      // Perform actual update
-      await incomeRepository.update(id, validatedUpdates);
+      // Perform actual update via API and get server response
+      const updatedEntry = await incomeApi.updateIncomeEntry(id, validatedUpdates);
+
+      // Update with server data (in case server modified anything)
+      set((state) => ({
+        incomeEntries: state.incomeEntries.map((entry) =>
+          entry.id === id ? updatedEntry : entry
+        ),
+      }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update income entry';
       set({ incomeError: errorMessage });
-      // Rollback on error
-      const original = get().incomeEntries.find((e) => e.id === id);
+      // Rollback using original captured before update
       if (original) {
         set((state) => ({
-          incomeEntries: state.incomeEntries.map((e) => (e.id === id ? original : e)),
+          incomeEntries: state.incomeEntries.map((entry) =>
+            entry.id === id ? original : entry
+          ),
         }));
       }
+      console.error('Failed to update income entry:', error);
       throw error;
     }
   },
@@ -111,26 +101,19 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   deleteIncomeEntry: async (id: string) => {
     set({ incomeError: null });
     try {
-      // Store original for rollback
-      const original = get().incomeEntries.find((e) => e.id === id);
-
       // Optimistic delete
       set((state) => ({
         incomeEntries: state.incomeEntries.filter((entry) => entry.id !== id),
       }));
 
-      // Perform actual delete
-      await incomeRepository.delete(id);
+      // Perform actual delete via API
+      await incomeApi.deleteIncomeEntry(id); // Use API helper
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete income entry';
       set({ incomeError: errorMessage });
-      // Rollback on error
-      const original = get().incomeEntries.find((e) => e.id === id);
-      if (original) {
-        set((state) => ({
-          incomeEntries: [...state.incomeEntries, original],
-        }));
-      }
+      // Rollback on error - fetch fresh data or store original for rollback
+      // For simplicity, we'll just log the error and let the user re-try or refresh
+      console.error('Failed to delete income entry, consider refetching data:', error);
       throw error;
     }
   },

@@ -40,9 +40,13 @@ interface TimeCalculatorProps {
 // ============================================================================
 
 export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
-  // Local state for input fields (allows user to type before parsing)
-  const [startInput, setStartInput] = useState('');
-  const [endInput, setEndInput] = useState('');
+  // Local state for input fields (user's raw input)
+  const [startInput, setStartInput] = useState(() => value.blockStartTime ? formatTimeDisplay(value.blockStartTime) : '');
+  const [endInput, setEndInput] = useState(() => value.blockEndTime ? formatTimeDisplay(value.blockEndTime) : '');
+
+  // Track which input is currently focused to prevent unwanted updates
+  const [startFocused, setStartFocused] = useState(false);
+  const [endFocused, setEndFocused] = useState(false);
 
   // ============================================================================
   // Time Formatting
@@ -55,8 +59,9 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
   const formatTimeDisplay = useCallback((isoString: string | null): string => {
     if (!isoString) return '';
     try {
-      return format(parseISO(isoString), 'h:mm a');
-    } catch {
+      const formatted = format(parseISO(isoString), 'p');
+      return formatted;
+    } catch (err) {
       return '';
     }
   }, []);
@@ -69,25 +74,30 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
     if (!input.trim()) return null;
 
     const trimmed = input.trim();
+    const baseDate = parseISO(`${date}T00:00:00`);
 
-    // Try multiple time formats
+    // Define a prioritized list of formats to try
     const formats = [
-      { format: 'h:mm a', input: trimmed },           // 2:30 PM
-      { format: 'h:mm a', input: trimmed.toLowerCase() }, // 2:30 pm
-      { format: 'h:mma', input: trimmed.toLowerCase() },  // 2:30pm
-      { format: 'h a', input: trimmed.toLowerCase() },    // 2 pm
-      { format: 'ha', input: trimmed.toLowerCase() },     // 2pm
-      { format: 'HH:mm', input: trimmed },            // 14:30
-      { format: 'H:mm', input: trimmed },             // 2:30 (24-hour)
+      // 1. Most specific 12-hour formats (case-sensitive)
+      { format: 'h:mm a', testInput: trimmed },           // e.g., "3:30 PM"
+      { format: 'h a', testInput: trimmed },              // e.g., "3 PM"
+
+      // 2. Most specific 24-hour formats (expects two-digit minutes)
+      { format: 'HH:mm', testInput: trimmed },            // e.g., "15:30"
+      { format: 'H:mm', testInput: trimmed },             // e.g., "3:30"
+
+      // 3. Flexible 12-hour (case-insensitive)
+      { format: 'h:mm a', testInput: trimmed.toLowerCase() },
+      { format: 'h:mma', testInput: trimmed.toLowerCase() },
+      { format: 'h a', testInput: trimmed.toLowerCase() },
+      { format: 'ha', testInput: trimmed.toLowerCase() },
     ];
 
-    for (const { format: fmt, input: testInput } of formats) {
+    for (const { format: fmt, testInput } of formats) {
       try {
-        const parsed = parse(testInput, fmt, new Date());
-        if (!isNaN(parsed.getTime())) {
-          const hours = String(parsed.getHours()).padStart(2, '0');
-          const minutes = String(parsed.getMinutes()).padStart(2, '0');
-          return `${date}T${hours}:${minutes}:00`;
+        const parsed = parse(testInput, fmt, baseDate);
+        if (!isNaN(parsed.getTime())) { // Check if parsing produced a valid date
+            return parsed.toISOString();
         }
       } catch {
         continue;
@@ -123,78 +133,86 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
   // ============================================================================
 
   /**
-   * Initialize input values from props when they change
+   * Synchronize local input states with prop values ONLY when not focused
+   * This prevents interrupting the user while they're typing
    */
   useEffect(() => {
-    if (value.blockStartTime) {
-      setStartInput(formatTimeDisplay(value.blockStartTime));
-    } else {
-      setStartInput('');
+    // Don't update start input while user is typing in it
+    if (!startFocused) {
+      const newStart = value.blockStartTime ? formatTimeDisplay(value.blockStartTime) : '';
+      setStartInput(newStart);
     }
-    if (value.blockEndTime) {
-      setEndInput(formatTimeDisplay(value.blockEndTime));
-    } else {
-      setEndInput('');
+  }, [value.blockStartTime, startFocused, formatTimeDisplay]);
+
+  useEffect(() => {
+    // Don't update end input while user is typing in it
+    if (!endFocused) {
+      const newEnd = value.blockEndTime ? formatTimeDisplay(value.blockEndTime) : '';
+      setEndInput(newEnd);
     }
-  }, [value.blockStartTime, value.blockEndTime, formatTimeDisplay]);
+  }, [value.blockEndTime, endFocused, formatTimeDisplay]);
+
 
   // ============================================================================
   // Event Handlers
   // ============================================================================
 
-  /**
-   * Handle start time input change
-   * Automatically calculates duration if end time is set
-   */
+  // Handle raw user input, just update local state
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    setStartInput(input);
-
-    const isoString = parseTimeInput(input);
-
-    // Calculate duration if both times are available
-    const duration = isoString && value.blockEndTime
-      ? calculateDuration(isoString, value.blockEndTime)
-      : null;
-
-    onChange({
-      blockStartTime: isoString,
-      blockEndTime: value.blockEndTime,
-      blockLength: duration,
-    });
+    setStartInput(e.target.value);
   };
 
-  /**
-   * Handle end time input change
-   * Automatically calculates duration if start time is set
-   */
+  // Handle raw user input, just update local state
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    setEndInput(input);
-
-    const isoString = parseTimeInput(input);
-
-    // Calculate duration if both times are available
-    const duration = value.blockStartTime && isoString
-      ? calculateDuration(value.blockStartTime, isoString)
-      : null;
-
-    onChange({
-      blockStartTime: value.blockStartTime,
-      blockEndTime: isoString,
-      blockLength: duration,
-    });
+    setEndInput(e.target.value);
   };
 
   /**
-   * Format inputs to standard display format on blur
+   * Handle blur event for time input fields
+   * This is where parsing, duration calculation, and parent `onChange` are triggered.
    */
-  const handleBlur = () => {
-    if (value.blockStartTime) {
-      setStartInput(formatTimeDisplay(value.blockStartTime));
+  const handleInputBlur = (type: 'start' | 'end') => {
+    const currentInput = type === 'start' ? startInput : endInput;
+    const otherInputIso = type === 'start' ? value.blockEndTime : value.blockStartTime;
+
+    const parsedIsoString = parseTimeInput(currentInput);
+
+    let newBlockStartTime = value.blockStartTime;
+    let newBlockEndTime = value.blockEndTime;
+
+    if (type === 'start') {
+      newBlockStartTime = parsedIsoString;
+    } else {
+      newBlockEndTime = parsedIsoString;
     }
-    if (value.blockEndTime) {
-      setEndInput(formatTimeDisplay(value.blockEndTime));
+
+    // Recalculate duration if both times are now valid
+    let newBlockLength: number | null = null;
+    if (newBlockStartTime && newBlockEndTime) {
+      newBlockLength = calculateDuration(newBlockStartTime, newBlockEndTime);
+    }
+
+    onChange({
+      blockStartTime: newBlockStartTime,
+      blockEndTime: newBlockEndTime,
+      blockLength: newBlockLength,
+    });
+
+    // Update local state with formatted time only if successfully parsed
+    if (parsedIsoString) {
+      if (type === 'start') {
+        setStartInput(formatTimeDisplay(parsedIsoString));
+      } else {
+        setEndInput(formatTimeDisplay(parsedIsoString));
+      }
+    } else {
+      // If parsing fails, keep user's raw input but clear the parent's state
+      // (parent will then push null back, local state stays raw until valid)
+      if (type === 'start') {
+        // No change to local startInput, it keeps raw text
+      } else {
+        // No change to local endInput, it keeps raw text
+      }
     }
   };
 
@@ -212,7 +230,11 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
             label="Start Time"
             value={startInput}
             onChange={handleStartTimeChange}
-            onBlur={handleBlur}
+            onFocus={() => setStartFocused(true)}
+            onBlur={() => {
+              setStartFocused(false);
+              handleInputBlur('start');
+            }}
             placeholder="2:30 PM"
             fullWidth
           />
@@ -226,7 +248,11 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
             label="End Time"
             value={endInput}
             onChange={handleEndTimeChange}
-            onBlur={handleBlur}
+            onFocus={() => setEndFocused(true)}
+            onBlur={() => {
+              setEndFocused(false);
+              handleInputBlur('end');
+            }}
             placeholder="5:45 PM"
             fullWidth
           />

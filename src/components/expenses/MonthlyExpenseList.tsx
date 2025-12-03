@@ -6,6 +6,7 @@ import { Card, ConfirmDialog } from '../ui';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
 import clsx from 'clsx';
 import type { FixedExpense, VariableExpense, PaymentPlan } from '@/types/expense';
+import { List } from 'react-window';
 
 interface MonthlyExpenseListProps {
   fixedExpenses: FixedExpense[];
@@ -38,6 +39,12 @@ export function MonthlyExpenseList({
   onDeletePaymentPlan,
   onTogglePaymentComplete,
 }: MonthlyExpenseListProps) {
+  // Sort fixed expenses by due date
+  const sortedFixedExpenses = useMemo(
+    () => [...fixedExpenses].sort((a, b) => a.dueDate - b.dueDate),
+    [fixedExpenses]
+  );
+
   // Filter variable expenses for current month
   const monthVariableExpenses = useMemo(
     () => variableExpenses.filter((e) => e.month === currentMonth),
@@ -153,6 +160,210 @@ export function MonthlyExpenseList({
     }
   };
 
+  // Render functions for virtualization
+  const renderFixedExpense = (expense: FixedExpense) => (
+    <div
+      key={expense.id}
+      className={clsx(
+        'flex items-center justify-between p-3 rounded-lg border transition-colors',
+        expense.isActive
+          ? 'bg-background border-border'
+          : 'bg-surface border-border opacity-60'
+      )}
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onToggleFixedActive(expense.id, !expense.isActive)}
+            className={clsx(
+              'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
+              expense.isActive
+                ? 'border-success bg-success'
+                : 'border-border bg-background'
+            )}
+            aria-label={expense.isActive ? 'Mark as inactive' : 'Mark as active'}
+            aria-checked={expense.isActive}
+            role="checkbox"
+          >
+            {expense.isActive && <CheckIcon className="h-4 w-4 text-white" />}
+          </button>
+          <div>
+            <div className={clsx('font-medium', expense.isActive ? 'text-text' : 'text-textSecondary line-through')}>
+              {expense.name}
+            </div>
+            <div className="text-sm text-textSecondary">Due: Day {expense.dueDate}</div>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="text-lg font-semibold text-text">
+          {formatCurrency(expense.amount)}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEditFixed(expense)}
+            className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+            aria-label="Edit fixed expense"
+          >
+            <PencilIcon className="h-5 w-5 text-primary" />
+          </button>
+          <button
+            onClick={() => handleDeleteFixed(expense.id)}
+            className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+            aria-label="Delete fixed expense"
+          >
+            <TrashIcon className="h-5 w-5 text-danger" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderVariableExpense = (expense: VariableExpense) => (
+    <div
+      key={expense.id}
+      className={clsx(
+        'flex items-center justify-between p-3 rounded-lg border transition-colors',
+        expense.isPaid
+          ? 'bg-surface border-border opacity-60'
+          : 'bg-background border-border'
+      )}
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onToggleVariablePaid(expense.id, !expense.isPaid)}
+            className={clsx(
+              'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
+              expense.isPaid
+                ? 'border-success bg-success'
+                : 'border-border bg-background'
+            )}
+            aria-label={expense.isPaid ? 'Mark as unpaid' : 'Mark as paid'}
+            aria-checked={expense.isPaid}
+            role="checkbox"
+          >
+            {expense.isPaid && <CheckIcon className="h-4 w-4 text-white" />}
+          </button>
+          <div>
+            <div className={clsx('font-medium', expense.isPaid ? 'text-textSecondary line-through' : 'text-text')}>
+              {expense.name}
+            </div>
+            <div className="text-sm text-textSecondary capitalize">{expense.category}</div>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="text-lg font-semibold text-text">
+          {formatCurrency(expense.amount)}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEditVariable(expense)}
+            className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+            aria-label="Edit variable expense"
+          >
+            <PencilIcon className="h-5 w-5 text-primary" />
+          </button>
+          <button
+            onClick={() => handleDeleteVariable(expense.id)}
+            className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+            aria-label="Delete variable expense"
+          >
+            <TrashIcon className="h-5 w-5 text-danger" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPaymentPlan = (plan: PaymentPlan) => {
+    const remaining = plan.totalPayments - plan.currentPayment + 1;
+    const remainingAmount = remaining * plan.paymentAmount;
+
+    return (
+      <div
+        key={plan.id}
+        className={clsx(
+          'flex items-center justify-between p-3 rounded-lg border transition-colors',
+          plan.isComplete
+            ? 'bg-surface border-border opacity-60'
+            : 'bg-background border-border'
+        )}
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onTogglePaymentComplete(plan.id, !plan.isComplete)}
+              className={clsx(
+                'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
+                plan.isComplete
+                  ? 'border-success bg-success'
+                  : 'border-border bg-background'
+              )}
+              aria-label={plan.isComplete ? 'Mark payment as incomplete' : 'Mark payment as complete'}
+              aria-checked={plan.isComplete}
+              role="checkbox"
+            >
+              {plan.isComplete && <CheckIcon className="h-4 w-4 text-white" />}
+            </button>
+            <div>
+              <div className={clsx('font-medium', plan.isComplete ? 'text-textSecondary line-through' : 'text-text')}>
+                {plan.name}
+              </div>
+              <div className="text-sm text-textSecondary">
+                {plan.provider} • Payment {plan.currentPayment} of {plan.totalPayments} • {remaining} remaining
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            {plan.minimumMonthlyPayment ? (
+              <>
+                <div className="text-sm text-textSecondary">
+                  Min: {formatCurrency(plan.minimumMonthlyPayment)}/mo
+                </div>
+                <div className="text-lg font-semibold text-text">
+                  {formatCurrency(plan.paymentAmount)}
+                </div>
+              </>
+            ) : (
+              <div className="text-lg font-semibold text-text">
+                {formatCurrency(plan.paymentAmount)}
+              </div>
+            )}
+            {!plan.isComplete && (
+              <div className="text-sm text-warning">
+                {formatCurrency(remainingAmount)} left
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onEditPaymentPlan(plan)}
+              className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+              aria-label="Edit payment plan"
+            >
+              <PencilIcon className="h-5 w-5 text-primary" />
+            </button>
+            <button
+              onClick={() => handleDeletePaymentPlan(plan.id)}
+              className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
+              aria-label="Delete payment plan"
+            >
+              <TrashIcon className="h-5 w-5 text-danger" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const shouldVirtualizeFixed = sortedFixedExpenses.length > 10;
+  const shouldVirtualizeVariable = monthVariableExpenses.length > 10;
+  const shouldVirtualizePayments = paymentPlans.length > 10;
+
   return (
     <div className="space-y-6">
       {/* Summary Card */}
@@ -185,67 +396,23 @@ export function MonthlyExpenseList({
       {/* Fixed Expenses */}
       <Card>
         <h3 className="text-lg font-semibold text-text mb-4">Fixed Monthly Expenses</h3>
-        {fixedExpenses.length === 0 ? (
+        {sortedFixedExpenses.length === 0 ? (
           <p className="text-textSecondary text-center py-4">No fixed expenses added yet</p>
+        ) : shouldVirtualizeFixed ? (
+          <List
+            defaultHeight={Math.min(sortedFixedExpenses.length * 90, 600)}
+            rowCount={sortedFixedExpenses.length}
+            rowHeight={90}
+            rowProps={{}}
+            rowComponent={({ index, style }) => (
+              <div style={style} className="pb-2">
+                {renderFixedExpense(sortedFixedExpenses[index])}
+              </div>
+            )}
+          />
         ) : (
           <div className="space-y-2">
-            {fixedExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                className={clsx(
-                  'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                  expense.isActive
-                    ? 'bg-background border-border'
-                    : 'bg-surface border-border opacity-60'
-                )}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => onToggleFixedActive(expense.id, !expense.isActive)}
-                      className={clsx(
-                        'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
-                        expense.isActive
-                          ? 'border-success bg-success'
-                          : 'border-border bg-background'
-                      )}
-                      aria-label={expense.isActive ? 'Mark as inactive' : 'Mark as active'}
-                      aria-checked={expense.isActive}
-                      role="checkbox"
-                    >
-                      {expense.isActive && <CheckIcon className="h-4 w-4 text-white" />}
-                    </button>
-                    <div>
-                      <div className={clsx('font-medium', expense.isActive ? 'text-text' : 'text-textSecondary line-through')}>
-                        {expense.name}
-                      </div>
-                      <div className="text-sm text-textSecondary">Due: Day {expense.dueDate}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-semibold text-text">
-                    {formatCurrency(expense.amount)}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onEditFixed(expense)}
-                      className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                      aria-label="Edit fixed expense"
-                    >
-                      <PencilIcon className="h-5 w-5 text-primary" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteFixed(expense.id)}
-                      className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                      aria-label="Delete fixed expense"
-                    >
-                      <TrashIcon className="h-5 w-5 text-danger" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {sortedFixedExpenses.map((expense) => renderFixedExpense(expense))}
           </div>
         )}
       </Card>
@@ -255,65 +422,21 @@ export function MonthlyExpenseList({
         <h3 className="text-lg font-semibold text-text mb-4">Variable Expenses ({currentMonth})</h3>
         {monthVariableExpenses.length === 0 ? (
           <p className="text-textSecondary text-center py-4">No variable expenses for this month</p>
+        ) : shouldVirtualizeVariable ? (
+          <List
+            defaultHeight={Math.min(monthVariableExpenses.length * 90, 600)}
+            rowCount={monthVariableExpenses.length}
+            rowHeight={90}
+            rowProps={{}}
+            rowComponent={({ index, style }) => (
+              <div style={style} className="pb-2">
+                {renderVariableExpense(monthVariableExpenses[index])}
+              </div>
+            )}
+          />
         ) : (
           <div className="space-y-2">
-            {monthVariableExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                className={clsx(
-                  'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                  expense.isPaid
-                    ? 'bg-surface border-border opacity-60'
-                    : 'bg-background border-border'
-                )}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => onToggleVariablePaid(expense.id, !expense.isPaid)}
-                      className={clsx(
-                        'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
-                        expense.isPaid
-                          ? 'border-success bg-success'
-                          : 'border-border bg-background'
-                      )}
-                      aria-label={expense.isPaid ? 'Mark as unpaid' : 'Mark as paid'}
-                      aria-checked={expense.isPaid}
-                      role="checkbox"
-                    >
-                      {expense.isPaid && <CheckIcon className="h-4 w-4 text-white" />}
-                    </button>
-                    <div>
-                      <div className={clsx('font-medium', expense.isPaid ? 'text-textSecondary line-through' : 'text-text')}>
-                        {expense.name}
-                      </div>
-                      <div className="text-sm text-textSecondary capitalize">{expense.category}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-semibold text-text">
-                    {formatCurrency(expense.amount)}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onEditVariable(expense)}
-                      className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                      aria-label="Edit variable expense"
-                    >
-                      <PencilIcon className="h-5 w-5 text-primary" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteVariable(expense.id)}
-                      className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                      aria-label="Delete variable expense"
-                    >
-                      <TrashIcon className="h-5 w-5 text-danger" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {monthVariableExpenses.map((expense) => renderVariableExpense(expense))}
           </div>
         )}
       </Card>
@@ -323,90 +446,21 @@ export function MonthlyExpenseList({
         <h3 className="text-lg font-semibold text-text mb-4">Payment Plans</h3>
         {paymentPlans.length === 0 ? (
           <p className="text-textSecondary text-center py-4">No payment plans added yet</p>
+        ) : shouldVirtualizePayments ? (
+          <List
+            defaultHeight={Math.min(paymentPlans.length * 100, 600)}
+            rowCount={paymentPlans.length}
+            rowHeight={100}
+            rowProps={{}}
+            rowComponent={({ index, style }) => (
+              <div style={style} className="pb-2">
+                {renderPaymentPlan(paymentPlans[index])}
+              </div>
+            )}
+          />
         ) : (
           <div className="space-y-2">
-            {paymentPlans.map((plan) => {
-              const remaining = plan.totalPayments - plan.currentPayment + 1;
-              const remainingAmount = remaining * plan.paymentAmount;
-
-              return (
-                <div
-                  key={plan.id}
-                  className={clsx(
-                    'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                    plan.isComplete
-                      ? 'bg-surface border-border opacity-60'
-                      : 'bg-background border-border'
-                  )}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => onTogglePaymentComplete(plan.id, !plan.isComplete)}
-                        className={clsx(
-                          'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors min-w-[44px] min-h-[44px]',
-                          plan.isComplete
-                            ? 'border-success bg-success'
-                            : 'border-border bg-background'
-                        )}
-                        aria-label={plan.isComplete ? 'Mark payment as incomplete' : 'Mark payment as complete'}
-                        aria-checked={plan.isComplete}
-                        role="checkbox"
-                      >
-                        {plan.isComplete && <CheckIcon className="h-4 w-4 text-white" />}
-                      </button>
-                      <div>
-                        <div className={clsx('font-medium', plan.isComplete ? 'text-textSecondary line-through' : 'text-text')}>
-                          {plan.name}
-                        </div>
-                        <div className="text-sm text-textSecondary">
-                          {plan.provider} • Payment {plan.currentPayment} of {plan.totalPayments} • {remaining} remaining
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      {plan.minimumMonthlyPayment ? (
-                        <>
-                          <div className="text-sm text-textSecondary">
-                            Min: {formatCurrency(plan.minimumMonthlyPayment)}/mo
-                          </div>
-                          <div className="text-lg font-semibold text-text">
-                            {formatCurrency(plan.paymentAmount)}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-lg font-semibold text-text">
-                          {formatCurrency(plan.paymentAmount)}
-                        </div>
-                      )}
-                      {!plan.isComplete && (
-                        <div className="text-sm text-warning">
-                          {formatCurrency(remainingAmount)} left
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onEditPaymentPlan(plan)}
-                        className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                        aria-label="Edit payment plan"
-                      >
-                        <PencilIcon className="h-5 w-5 text-primary" />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePaymentPlan(plan.id)}
-                        className="p-2 rounded-lg hover:bg-surface transition-colors min-h-[44px] min-w-[44px]"
-                        aria-label="Delete payment plan"
-                      >
-                        <TrashIcon className="h-5 w-5 text-danger" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {paymentPlans.map((plan) => renderPaymentPlan(plan))}
           </div>
         )}
       </Card>

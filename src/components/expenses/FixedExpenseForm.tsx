@@ -15,6 +15,7 @@ export function FixedExpenseForm({ initialData, onSave, onCancel }: FixedExpense
   const [name, setName] = useState(initialData?.name ?? '');
   const [amount, setAmount] = useState(initialData?.amount?.toString() ?? '');
   const [dueDate, setDueDate] = useState(initialData?.dueDate?.toString() ?? '');
+  const [isActive] = useState(initialData?.isActive ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +38,15 @@ export function FixedExpenseForm({ initialData, onSave, onCancel }: FixedExpense
         name,
         amount: parseFloat(amount),
         dueDate: dueDateNum,
-        isActive: true,
+        isActive,
       });
 
-      // Always reset form after save
-      setName('');
-      setAmount('');
-      setDueDate('');
+      // Reset form only if adding new (not editing)
+      if (!initialData) {
+        setName('');
+        setAmount('');
+        setDueDate('');
+      }
     } catch (error) {
       console.error('Failed to save fixed expense:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save fixed expense';

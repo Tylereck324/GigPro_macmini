@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ThemeScript } from "@/components/providers/ThemeScript";
 import { ErrorBoundary } from "@/components/errors";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -36,35 +37,37 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeScript />
         <ErrorBoundary>
-          <ThemeProvider>
-            <div className="min-h-screen bg-background transition-colors duration-300">
-              <Header />
-              <main className="animate-fade-in">{children}</main>
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  className: 'rounded-xl shadow-xl border border-border/50',
-                  style: {
-                    background: 'var(--color-surface)',
-                    color: 'var(--color-text)',
-                    borderColor: 'var(--color-border)',
-                  },
-                  success: {
-                    iconTheme: {
-                      primary: 'var(--color-success)',
-                      secondary: 'white',
+          <AuthProvider>
+            <ThemeProvider>
+              <div className="min-h-screen bg-background transition-colors duration-300">
+                <Header />
+                <main className="animate-fade-in">{children}</main>
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    className: 'rounded-xl shadow-xl border border-border/50',
+                    style: {
+                      background: 'var(--color-surface)',
+                      color: 'var(--color-text)',
+                      borderColor: 'var(--color-border)',
                     },
-                  },
-                  error: {
-                    iconTheme: {
-                      primary: 'var(--color-danger)',
-                      secondary: 'white',
+                    success: {
+                      iconTheme: {
+                        primary: 'var(--color-success)',
+                        secondary: 'white',
+                      },
                     },
-                  },
-                }}
-              />
-            </div>
-          </ThemeProvider>
+                    error: {
+                      iconTheme: {
+                        primary: 'var(--color-danger)',
+                        secondary: 'white',
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </ThemeProvider>
+          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

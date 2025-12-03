@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { db } from '../db/schema';
+import { supabase } from '../supabase';
 import type { ExportData } from '@/types/settings';
 
 /**
@@ -7,42 +7,118 @@ import type { ExportData } from '@/types/settings';
  */
 export async function exportData(): Promise<void> {
   try {
-    // Fetch all data from IndexedDB
+    // Fetch all data from Supabase
     const [
-      incomeEntries,
-      dailyData,
-      fixedExpenses,
-      variableExpenses,
-      paymentPlans,
-      paymentPlanPayments,
-      settings,
+      { data: incomeEntries },
+      { data: dailyData },
+      { data: fixedExpenses },
+      { data: variableExpenses },
+      { data: paymentPlans },
+      { data: paymentPlanPayments },
+      { data: settings },
     ] = await Promise.all([
-      db.incomeEntries.toArray(),
-      db.dailyData.toArray(),
-      db.fixedExpenses.toArray(),
-      db.variableExpenses.toArray(),
-      db.paymentPlans.toArray(),
-      db.paymentPlanPayments.toArray(),
-      db.settings.toArray(),
+      supabase.from('income_entries').select('*'),
+      supabase.from('daily_data').select('*'),
+      supabase.from('fixed_expenses').select('*'),
+      supabase.from('variable_expenses').select('*'),
+      supabase.from('payment_plans').select('*'),
+      supabase.from('payment_plan_payments').select('*'),
+      supabase.from('app_settings').select('*').eq('id', 'settings').single(),
     ]);
 
+    // Map data from snake_case to camelCase
     const exportData: ExportData = {
       version: '1.0',
       exportDate: new Date().toISOString(),
       data: {
-        incomeEntries,
-        dailyData,
-        fixedExpenses,
-        variableExpenses,
-        paymentPlans,
-        paymentPlanPayments,
-        settings: settings[0] || {
-          id: 'settings',
-          theme: 'light',
-          lastExportDate: null,
-          lastImportDate: null,
-          updatedAt: Date.now(),
-        },
+        incomeEntries: (incomeEntries || []).map((entry: any) => ({
+          id: entry.id,
+          date: entry.date,
+          platform: entry.platform,
+          customPlatformName: entry.custom_platform_name,
+          blockStartTime: entry.block_start_time,
+          blockEndTime: entry.block_end_time,
+          blockLength: entry.block_length,
+          amount: entry.amount,
+          notes: entry.notes,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        dailyData: (dailyData || []).map((entry: any) => ({
+          id: entry.id,
+          date: entry.date,
+          mileage: entry.mileage,
+          gasExpense: entry.gas_expense,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        fixedExpenses: (fixedExpenses || []).map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          amount: entry.amount,
+          dueDate: entry.due_date,
+          isActive: entry.is_active,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        variableExpenses: (variableExpenses || []).map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          amount: entry.amount,
+          category: entry.category,
+          month: entry.month,
+          isPaid: entry.is_paid,
+          paidDate: entry.paid_date,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        paymentPlans: (paymentPlans || []).map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          provider: entry.provider,
+          initialCost: entry.initial_cost,
+          totalPayments: entry.total_payments,
+          currentPayment: entry.current_payment,
+          paymentAmount: entry.payment_amount,
+          minimumMonthlyPayment: entry.minimum_monthly_payment,
+          startDate: entry.start_date,
+          frequency: entry.frequency,
+          endDate: entry.end_date,
+          minimumPayment: entry.minimum_payment,
+          isComplete: entry.is_complete,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        paymentPlanPayments: (paymentPlanPayments || []).map((entry: any) => ({
+          id: entry.id,
+          paymentPlanId: entry.payment_plan_id,
+          paymentNumber: entry.payment_number,
+          dueDate: entry.due_date,
+          isPaid: entry.is_paid,
+          paidDate: entry.paid_date,
+          month: entry.month,
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
+        })),
+        settings: settings
+          ? {
+              id: settings.id,
+              theme: settings.theme,
+              lastExportDate: settings.last_export_date ? new Date(settings.last_export_date).getTime() : null,
+              lastImportDate: settings.last_import_date ? new Date(settings.last_import_date).getTime() : null,
+              amazonFlexDailyCapacity: settings.amazon_flex_daily_capacity,
+              amazonFlexWeeklyCapacity: settings.amazon_flex_weekly_capacity,
+              updatedAt: new Date(settings.updated_at).getTime(),
+            }
+          : {
+              id: 'settings',
+              theme: 'light',
+              lastExportDate: null,
+              lastImportDate: null,
+              amazonFlexDailyCapacity: 480,
+              amazonFlexWeeklyCapacity: 2400,
+              updatedAt: Date.now(),
+            },
       },
     };
 
@@ -58,10 +134,13 @@ export async function exportData(): Promise<void> {
     saveAs(blob, filename);
 
     // Update last export date in settings
-    await db.settings.update('settings', {
-      lastExportDate: Date.now(),
-      updatedAt: Date.now(),
-    });
+    await supabase
+      .from('app_settings')
+      .update({
+        last_export_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', 'settings');
   } catch (error) {
     console.error('Export failed:', error);
     throw new Error('Failed to export data');
@@ -89,41 +168,151 @@ export async function importData(file: File): Promise<void> {
 
     // Clear existing data
     await Promise.all([
-      db.incomeEntries.clear(),
-      db.dailyData.clear(),
-      db.fixedExpenses.clear(),
-      db.variableExpenses.clear(),
-      db.paymentPlans.clear(),
-      db.paymentPlanPayments.clear(),
+      supabase.from('income_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      supabase.from('daily_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      supabase.from('fixed_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      supabase.from('variable_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      supabase.from('payment_plan_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      supabase.from('payment_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
     ]);
 
-    // Import data
-    await Promise.all([
-      imported.data.incomeEntries && imported.data.incomeEntries.length > 0
-        ? db.incomeEntries.bulkAdd(imported.data.incomeEntries)
-        : Promise.resolve(),
-      imported.data.dailyData && imported.data.dailyData.length > 0
-        ? db.dailyData.bulkAdd(imported.data.dailyData)
-        : Promise.resolve(),
-      imported.data.fixedExpenses && imported.data.fixedExpenses.length > 0
-        ? db.fixedExpenses.bulkAdd(imported.data.fixedExpenses)
-        : Promise.resolve(),
-      imported.data.variableExpenses && imported.data.variableExpenses.length > 0
-        ? db.variableExpenses.bulkAdd(imported.data.variableExpenses)
-        : Promise.resolve(),
-      imported.data.paymentPlans && imported.data.paymentPlans.length > 0
-        ? db.paymentPlans.bulkAdd(imported.data.paymentPlans)
-        : Promise.resolve(),
-      imported.data.paymentPlanPayments && imported.data.paymentPlanPayments.length > 0
-        ? db.paymentPlanPayments.bulkAdd(imported.data.paymentPlanPayments)
-        : Promise.resolve(),
-    ]);
+    // Import income entries (map camelCase to snake_case)
+    if (imported.data.incomeEntries && imported.data.incomeEntries.length > 0) {
+      const { error: incomeError } = await supabase.from('income_entries').insert(
+        imported.data.incomeEntries.map((entry: any) => ({
+          id: entry.id,
+          date: entry.date,
+          platform: entry.platform,
+          custom_platform_name: entry.customPlatformName,
+          block_start_time: entry.blockStartTime,
+          block_end_time: entry.blockEndTime,
+          block_length: entry.blockLength,
+          amount: entry.amount,
+          notes: entry.notes,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (incomeError) {
+        console.error('Failed to import income entries:', incomeError);
+        throw new Error(`Failed to import income entries: ${incomeError.message}`);
+      }
+    }
+
+    // Import daily data
+    if (imported.data.dailyData && imported.data.dailyData.length > 0) {
+      const { error: dailyDataError } = await supabase.from('daily_data').insert(
+        imported.data.dailyData.map((entry: any) => ({
+          id: entry.id,
+          date: entry.date,
+          mileage: entry.mileage,
+          gas_expense: entry.gasExpense,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (dailyDataError) {
+        console.error('Failed to import daily data:', dailyDataError);
+        throw new Error(`Failed to import daily data: ${dailyDataError.message}`);
+      }
+    }
+
+    // Import fixed expenses
+    if (imported.data.fixedExpenses && imported.data.fixedExpenses.length > 0) {
+      const { error: fixedExpensesError } = await supabase.from('fixed_expenses').insert(
+        imported.data.fixedExpenses.map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          amount: entry.amount,
+          due_date: entry.dueDate,
+          is_active: entry.isActive,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (fixedExpensesError) {
+        console.error('Failed to import fixed expenses:', fixedExpensesError);
+        throw new Error(`Failed to import fixed expenses: ${fixedExpensesError.message}`);
+      }
+    }
+
+    // Import variable expenses
+    if (imported.data.variableExpenses && imported.data.variableExpenses.length > 0) {
+      const { error: variableExpensesError } = await supabase.from('variable_expenses').insert(
+        imported.data.variableExpenses.map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          amount: entry.amount,
+          category: entry.category,
+          month: entry.month,
+          is_paid: entry.isPaid,
+          paid_date: entry.paidDate,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (variableExpensesError) {
+        console.error('Failed to import variable expenses:', variableExpensesError);
+        throw new Error(`Failed to import variable expenses: ${variableExpensesError.message}`);
+      }
+    }
+
+    // Import payment plans
+    if (imported.data.paymentPlans && imported.data.paymentPlans.length > 0) {
+      const { error: paymentPlansError } = await supabase.from('payment_plans').insert(
+        imported.data.paymentPlans.map((entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          provider: entry.provider,
+          initial_cost: entry.initialCost,
+          total_payments: entry.totalPayments,
+          current_payment: entry.currentPayment,
+          payment_amount: entry.paymentAmount,
+          minimum_monthly_payment: entry.minimumMonthlyPayment,
+          start_date: entry.startDate,
+          frequency: entry.frequency,
+          end_date: entry.endDate,
+          minimum_payment: entry.minimumPayment,
+          is_complete: entry.isComplete,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (paymentPlansError) {
+        console.error('Failed to import payment plans:', paymentPlansError);
+        throw new Error(`Failed to import payment plans: ${paymentPlansError.message}`);
+      }
+    }
+
+    // Import payment plan payments
+    if (imported.data.paymentPlanPayments && imported.data.paymentPlanPayments.length > 0) {
+      const { error: paymentPlanPaymentsError } = await supabase.from('payment_plan_payments').insert(
+        imported.data.paymentPlanPayments.map((entry: any) => ({
+          id: entry.id,
+          payment_plan_id: entry.paymentPlanId,
+          payment_number: entry.paymentNumber,
+          due_date: entry.dueDate,
+          is_paid: entry.isPaid,
+          paid_date: entry.paidDate,
+          month: entry.month,
+          created_at: new Date(entry.createdAt).toISOString(),
+          updated_at: new Date(entry.updatedAt).toISOString(),
+        }))
+      );
+      if (paymentPlanPaymentsError) {
+        console.error('Failed to import payment plan payments:', paymentPlanPaymentsError);
+        throw new Error(`Failed to import payment plan payments: ${paymentPlanPaymentsError.message}`);
+      }
+    }
 
     // Update last import date in settings
-    await db.settings.update('settings', {
-      lastImportDate: Date.now(),
-      updatedAt: Date.now(),
-    });
+    await supabase
+      .from('app_settings')
+      .update({
+        last_import_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', 'settings');
   } catch (error) {
     console.error('Import failed:', error);
     if (error instanceof Error) {
@@ -138,29 +327,29 @@ export async function importData(file: File): Promise<void> {
  */
 export async function getDataStats() {
   const [
-    incomeCount,
-    dailyDataCount,
-    fixedExpenseCount,
-    variableExpenseCount,
-    paymentPlanCount,
-    settings,
+    { count: incomeCount },
+    { count: dailyDataCount },
+    { count: fixedExpenseCount },
+    { count: variableExpenseCount },
+    { count: paymentPlanCount },
+    { data: settings },
   ] = await Promise.all([
-    db.incomeEntries.count(),
-    db.dailyData.count(),
-    db.fixedExpenses.count(),
-    db.variableExpenses.count(),
-    db.paymentPlans.count(),
-    db.settings.get('settings'),
+    supabase.from('income_entries').select('*', { count: 'exact', head: true }),
+    supabase.from('daily_data').select('*', { count: 'exact', head: true }),
+    supabase.from('fixed_expenses').select('*', { count: 'exact', head: true }),
+    supabase.from('variable_expenses').select('*', { count: 'exact', head: true }),
+    supabase.from('payment_plans').select('*', { count: 'exact', head: true }),
+    supabase.from('app_settings').select('*').eq('id', 'settings').single(),
   ]);
 
   return {
-    incomeEntries: incomeCount,
-    dailyData: dailyDataCount,
-    fixedExpenses: fixedExpenseCount,
-    variableExpenses: variableExpenseCount,
-    paymentPlans: paymentPlanCount,
-    lastExportDate: settings?.lastExportDate || null,
-    lastImportDate: settings?.lastImportDate || null,
+    incomeEntries: incomeCount || 0,
+    dailyData: dailyDataCount || 0,
+    fixedExpenses: fixedExpenseCount || 0,
+    variableExpenses: variableExpenseCount || 0,
+    paymentPlans: paymentPlanCount || 0,
+    lastExportDate: settings?.last_export_date ? new Date(settings.last_export_date).getTime() : null,
+    lastImportDate: settings?.last_import_date ? new Date(settings.last_import_date).getTime() : null,
   };
 }
 
@@ -169,11 +358,11 @@ export async function getDataStats() {
  */
 export async function clearAllData(): Promise<void> {
   await Promise.all([
-    db.incomeEntries.clear(),
-    db.dailyData.clear(),
-    db.fixedExpenses.clear(),
-    db.variableExpenses.clear(),
-    db.paymentPlans.clear(),
-    db.paymentPlanPayments.clear(),
+    supabase.from('income_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+    supabase.from('daily_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+    supabase.from('fixed_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+    supabase.from('variable_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+    supabase.from('payment_plan_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+    supabase.from('payment_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
   ]);
 }

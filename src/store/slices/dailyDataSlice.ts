@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import type { DailyData, UpdateDailyData } from '@/types/dailyData';
-import { dailyDataRepository } from '@/lib/db';
+import { dailyDataApi } from '@/lib/api/dailyData';
 import { updateDailyDataSchema } from '@/types/validation';
 
 export interface DailyDataSlice {
@@ -23,7 +23,7 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
   loadDailyData: async () => {
     set({ dailyDataLoading: true, dailyDataError: null });
     try {
-      const dataArray = await dailyDataRepository.getAll();
+      const dataArray = await dailyDataApi.getAllDailyData();
       const dataMap = dataArray.reduce((acc, item) => {
         acc[item.date] = item;
         return acc;
@@ -62,8 +62,8 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
         },
       }));
 
-      // Perform actual update
-      const updated = await dailyDataRepository.upsert(date, validatedData);
+      // Perform actual update (upsert)
+      const updated = await dailyDataApi.upsertDailyData(date, validatedData);
 
       // Replace with real data
       set((state) => ({
@@ -76,7 +76,6 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
       const errorMessage = error instanceof Error ? error.message : 'Failed to update daily data';
       set({ dailyDataError: errorMessage });
       // Rollback on error
-      const original = get().dailyData[date];
       if (original && !original.id.startsWith('temp-')) {
         set((state) => ({
           dailyData: {

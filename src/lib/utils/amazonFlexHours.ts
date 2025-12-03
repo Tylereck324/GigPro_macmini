@@ -1,6 +1,5 @@
 import { parseISO, subDays, isSameDay, isWithinInterval } from 'date-fns';
 import type { IncomeEntry, AmazonFlexHours } from '@/types/income';
-import { AMAZON_FLEX_DAILY_LIMIT, AMAZON_FLEX_WEEKLY_LIMIT } from '../constants/gigPlatforms';
 import { minutesToHours } from './timeCalculations';
 
 /**
@@ -9,7 +8,9 @@ import { minutesToHours } from './timeCalculations';
  */
 export function calculateAmazonFlexHours(
   allIncomeEntries: IncomeEntry[],
-  targetDate: Date
+  targetDate: Date,
+  dailyLimitHours: number,
+  weeklyLimitHours: number,
 ): AmazonFlexHours {
   // Filter Amazon Flex entries only
   const amazonEntries = allIncomeEntries.filter((e) => e.platform === 'AmazonFlex');
@@ -51,8 +52,8 @@ export function calculateAmazonFlexHours(
   return {
     dailyHoursUsed,
     weeklyHoursUsed,
-    dailyRemaining: Math.max(0, AMAZON_FLEX_DAILY_LIMIT - dailyHoursUsed),
-    weeklyRemaining: Math.max(0, AMAZON_FLEX_WEEKLY_LIMIT - weeklyHoursUsed),
+    dailyRemaining: Math.max(0, dailyLimitHours - dailyHoursUsed),
+    weeklyRemaining: Math.max(0, weeklyLimitHours - weeklyHoursUsed),
   };
 }
 

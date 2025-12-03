@@ -14,9 +14,23 @@
       "Bash(node generate-icons.js:*)",
       "Bash(node generate-png-icons.js:*)",
       "WebFetch(domain:web.dev)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx playwright install)",
+      "Bash(npm test:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__execute_sql",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

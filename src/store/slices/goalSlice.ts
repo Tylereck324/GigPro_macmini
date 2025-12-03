@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import type { Goal, CreateGoal, UpdateGoal } from '@/types/goal';
-import { goalRepository } from '@/lib/db';
+import { goalsApi } from '@/lib/api/goals';
 import { createGoalSchema, updateGoalSchema } from '@/types/validation';
 
 export interface GoalSlice {
@@ -29,7 +29,7 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
   loadGoals: async () => {
     set({ goalsLoading: true, goalsError: null });
     try {
-      const goals = await goalRepository.getAll();
+      const goals = await goalsApi.getGoals();
       set({ goals, goalsLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load goals';
@@ -45,35 +45,18 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
       // Validate input
       const validatedGoal = createGoalSchema.parse(goal);
 
-      // Optimistic update
-      const tempId = `temp-${Date.now()}`;
-      const optimisticGoal = {
-        ...validatedGoal,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as Goal;
-
-      set((state) => ({
-        goals: [...state.goals, optimisticGoal],
-      }));
-
       // Perform actual creation
-      const newGoal = await goalRepository.create(validatedGoal);
+      const newGoal = await goalsApi.createGoal(validatedGoal);
 
-      // Replace optimistic entry with real one
+      // Update state with new goal
       set((state) => ({
-        goals: state.goals.map((g) => (g.id === tempId ? newGoal : g)),
+        goals: [...state.goals, newGoal],
       }));
 
       return newGoal;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add goal';
       set({ goalsError: errorMessage });
-      // Rollback optimistic update
-      set((state) => ({
-        goals: state.goals.filter((g) => !g.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
@@ -95,12 +78,11 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
       }));
 
       // Perform actual update
-      await goalRepository.update(id, validatedUpdates);
+      await goalsApi.updateGoal(id, validatedUpdates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update goal';
       set({ goalsError: errorMessage });
       // Rollback on error
-      const original = get().goals.find((g) => g.id === id);
       if (original) {
         set((state) => ({
           goals: state.goals.map((g) => (g.id === id ? original : g)),
@@ -122,12 +104,11 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
       }));
 
       // Perform actual delete
-      await goalRepository.delete(id);
+      await goalsApi.deleteGoal(id);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete goal';
       set({ goalsError: errorMessage });
       // Rollback on error
-      const original = get().goals.find((g) => g.id === id);
       if (original) {
         set((state) => ({
           goals: [...state.goals, original],

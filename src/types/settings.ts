@@ -24,6 +24,10 @@ export interface AppSettings {
   lastExportDate: number | null;
   /** Timestamp of last data import, null if never imported */
   lastImportDate: number | null;
+  /** Amazon Flex daily hour capacity in minutes */
+  amazonFlexDailyCapacity: number;
+  /** Amazon Flex weekly hour capacity in minutes */
+  amazonFlexWeeklyCapacity: number;
   /** Timestamp when settings were last updated */
   updatedAt: number;
 }

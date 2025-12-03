@@ -14,11 +14,11 @@ import type {
   UpdatePaymentPlanPayment,
 } from '@/types/expense';
 import {
-  fixedExpenseRepository,
-  variableExpenseRepository,
-  paymentPlanRepository,
-  paymentPlanPaymentRepository,
-} from '@/lib/db';
+  fixedExpensesApi,
+  variableExpensesApi,
+  paymentPlansApi,
+  paymentPlanPaymentsApi,
+} from '@/lib/api/expenses';
 import {
   createFixedExpenseSchema,
   updateFixedExpenseSchema,
@@ -78,7 +78,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadFixedExpenses: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const expenses = await fixedExpenseRepository.getAll();
+      const expenses = await fixedExpensesApi.getFixedExpenses();
       set({ fixedExpenses: expenses, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load fixed expenses';
@@ -92,40 +92,28 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     set({ expenseError: null });
     try {
       const validatedExpense = createFixedExpenseSchema.parse(expense);
-      const tempId = `temp-${Date.now()}`;
-      const optimisticExpense = {
-        ...validatedExpense,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as FixedExpense;
+
+      const newExpense = await fixedExpensesApi.createFixedExpense(validatedExpense);
 
       set((state) => ({
-        fixedExpenses: [...state.fixedExpenses, optimisticExpense],
-      }));
-
-      const newExpense = await fixedExpenseRepository.create(validatedExpense);
-
-      set((state) => ({
-        fixedExpenses: state.fixedExpenses.map((e) => (e.id === tempId ? newExpense : e)),
+        fixedExpenses: [...state.fixedExpenses, newExpense],
       }));
 
       return newExpense;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add fixed expense';
       set({ expenseError: errorMessage });
-      set((state) => ({
-        fixedExpenses: state.fixedExpenses.filter((e) => !e.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
 
   updateFixedExpense: async (id: string, updates: UpdateFixedExpense) => {
     set({ expenseError: null });
+    // Capture original BEFORE optimistic update
+    const original = get().fixedExpenses.find((e) => e.id === id);
+
     try {
       const validatedUpdates = updateFixedExpenseSchema.parse(updates);
-      const original = get().fixedExpenses.find((e) => e.id === id);
 
       set((state) => ({
         fixedExpenses: state.fixedExpenses.map((expense) =>
@@ -133,11 +121,11 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         ),
       }));
 
-      await fixedExpenseRepository.update(id, validatedUpdates);
+      await fixedExpensesApi.updateFixedExpense(id, validatedUpdates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update fixed expense';
       set({ expenseError: errorMessage });
-      const original = get().fixedExpenses.find((e) => e.id === id);
+      // Rollback using original captured before update
       if (original) {
         set((state) => ({
           fixedExpenses: state.fixedExpenses.map((e) => (e.id === id ? original : e)),
@@ -156,11 +144,10 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         fixedExpenses: state.fixedExpenses.filter((expense) => expense.id !== id),
       }));
 
-      await fixedExpenseRepository.delete(id);
+      await fixedExpensesApi.deleteFixedExpense(id);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete fixed expense';
       set({ expenseError: errorMessage });
-      const original = get().fixedExpenses.find((e) => e.id === id);
       if (original) {
         set((state) => ({
           fixedExpenses: [...state.fixedExpenses, original],
@@ -174,7 +161,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadVariableExpenses: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const expenses = await variableExpenseRepository.getAll();
+      const expenses = await variableExpensesApi.getVariableExpenses();
       set({ variableExpenses: expenses, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load variable expenses';
@@ -188,40 +175,28 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     set({ expenseError: null });
     try {
       const validatedExpense = createVariableExpenseSchema.parse(expense);
-      const tempId = `temp-${Date.now()}`;
-      const optimisticExpense = {
-        ...validatedExpense,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as VariableExpense;
+
+      const newExpense = await variableExpensesApi.createVariableExpense(validatedExpense);
 
       set((state) => ({
-        variableExpenses: [...state.variableExpenses, optimisticExpense],
-      }));
-
-      const newExpense = await variableExpenseRepository.create(validatedExpense);
-
-      set((state) => ({
-        variableExpenses: state.variableExpenses.map((e) => (e.id === tempId ? newExpense : e)),
+        variableExpenses: [...state.variableExpenses, newExpense],
       }));
 
       return newExpense;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add variable expense';
       set({ expenseError: errorMessage });
-      set((state) => ({
-        variableExpenses: state.variableExpenses.filter((e) => !e.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
 
   updateVariableExpense: async (id: string, updates: UpdateVariableExpense) => {
     set({ expenseError: null });
+    // Capture original BEFORE optimistic update
+    const original = get().variableExpenses.find((e) => e.id === id);
+
     try {
       const validatedUpdates = updateVariableExpenseSchema.parse(updates);
-      const original = get().variableExpenses.find((e) => e.id === id);
 
       set((state) => ({
         variableExpenses: state.variableExpenses.map((expense) =>
@@ -229,11 +204,11 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         ),
       }));
 
-      await variableExpenseRepository.update(id, validatedUpdates);
+      await variableExpensesApi.updateVariableExpense(id, validatedUpdates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update variable expense';
       set({ expenseError: errorMessage });
-      const original = get().variableExpenses.find((e) => e.id === id);
+      // Rollback using original captured before update
       if (original) {
         set((state) => ({
           variableExpenses: state.variableExpenses.map((e) => (e.id === id ? original : e)),
@@ -252,7 +227,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         variableExpenses: state.variableExpenses.filter((expense) => expense.id !== id),
       }));
 
-      await variableExpenseRepository.delete(id);
+      await variableExpensesApi.deleteVariableExpense(id);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete variable expense';
       set({ expenseError: errorMessage });
@@ -270,7 +245,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadPaymentPlans: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const plans = await paymentPlanRepository.getAll();
+      const plans = await paymentPlansApi.getPaymentPlans();
       set({ paymentPlans: plans, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load payment plans';
@@ -284,40 +259,28 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     set({ expenseError: null });
     try {
       const validatedPlan = createPaymentPlanSchema.parse(plan);
-      const tempId = `temp-${Date.now()}`;
-      const optimisticPlan = {
-        ...validatedPlan,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as PaymentPlan;
+
+      const newPlan = await paymentPlansApi.createPaymentPlan(validatedPlan);
 
       set((state) => ({
-        paymentPlans: [...state.paymentPlans, optimisticPlan],
-      }));
-
-      const newPlan = await paymentPlanRepository.create(validatedPlan);
-
-      set((state) => ({
-        paymentPlans: state.paymentPlans.map((p) => (p.id === tempId ? newPlan : p)),
+        paymentPlans: [...state.paymentPlans, newPlan],
       }));
 
       return newPlan;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add payment plan';
       set({ expenseError: errorMessage });
-      set((state) => ({
-        paymentPlans: state.paymentPlans.filter((p) => !p.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
 
   updatePaymentPlan: async (id: string, updates: UpdatePaymentPlan) => {
     set({ expenseError: null });
+    // Capture original BEFORE optimistic update
+    const original = get().paymentPlans.find((p) => p.id === id);
+
     try {
       const validatedUpdates = updatePaymentPlanSchema.parse(updates);
-      const original = get().paymentPlans.find((p) => p.id === id);
 
       set((state) => ({
         paymentPlans: state.paymentPlans.map((plan) =>
@@ -325,11 +288,11 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         ),
       }));
 
-      await paymentPlanRepository.update(id, validatedUpdates);
+      await paymentPlansApi.updatePaymentPlan(id, validatedUpdates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update payment plan';
       set({ expenseError: errorMessage });
-      const original = get().paymentPlans.find((p) => p.id === id);
+      // Rollback using original captured before update
       if (original) {
         set((state) => ({
           paymentPlans: state.paymentPlans.map((p) => (p.id === id ? original : p)),
@@ -352,7 +315,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         ),
       }));
 
-      await paymentPlanRepository.delete(id);
+      await paymentPlansApi.deletePaymentPlan(id);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete payment plan';
       set({ expenseError: errorMessage });
@@ -372,7 +335,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadPaymentPlanPayments: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const payments = await paymentPlanPaymentRepository.getAll();
+      const payments = await paymentPlanPaymentsApi.getPaymentPlanPayments();
       set({ paymentPlanPayments: payments, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load payment plan payments';
@@ -386,42 +349,28 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     set({ expenseError: null });
     try {
       const validatedPayment = createPaymentPlanPaymentSchema.parse(payment);
-      const tempId = `temp-${Date.now()}`;
-      const optimisticPayment = {
-        ...validatedPayment,
-        id: tempId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      } as PaymentPlanPayment;
+
+      const newPayment = await paymentPlanPaymentsApi.createPaymentPlanPayment(validatedPayment);
 
       set((state) => ({
-        paymentPlanPayments: [...state.paymentPlanPayments, optimisticPayment],
-      }));
-
-      const newPayment = await paymentPlanPaymentRepository.create(validatedPayment);
-
-      set((state) => ({
-        paymentPlanPayments: state.paymentPlanPayments.map((p) =>
-          p.id === tempId ? newPayment : p
-        ),
+        paymentPlanPayments: [...state.paymentPlanPayments, newPayment],
       }));
 
       return newPayment;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add payment plan payment';
       set({ expenseError: errorMessage });
-      set((state) => ({
-        paymentPlanPayments: state.paymentPlanPayments.filter((p) => !p.id.startsWith('temp-')),
-      }));
       throw error;
     }
   },
 
   updatePaymentPlanPayment: async (id: string, updates: UpdatePaymentPlanPayment) => {
     set({ expenseError: null });
+    // Capture original BEFORE optimistic update
+    const original = get().paymentPlanPayments.find((p) => p.id === id);
+
     try {
       const validatedUpdates = updatePaymentPlanPaymentSchema.parse(updates);
-      const original = get().paymentPlanPayments.find((p) => p.id === id);
 
       set((state) => ({
         paymentPlanPayments: state.paymentPlanPayments.map((payment) =>
@@ -429,11 +378,11 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         ),
       }));
 
-      await paymentPlanPaymentRepository.update(id, validatedUpdates);
+      await paymentPlanPaymentsApi.updatePaymentPlanPayment(id, validatedUpdates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update payment plan payment';
       set({ expenseError: errorMessage });
-      const original = get().paymentPlanPayments.find((p) => p.id === id);
+      // Rollback using original captured before update
       if (original) {
         set((state) => ({
           paymentPlanPayments: state.paymentPlanPayments.map((p) => (p.id === id ? original : p)),
@@ -452,7 +401,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
         paymentPlanPayments: state.paymentPlanPayments.filter((payment) => payment.id !== id),
       }));
 
-      await paymentPlanPaymentRepository.delete(id);
+      await paymentPlanPaymentsApi.deletePaymentPlanPayment(id);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete payment plan payment';
       set({ expenseError: errorMessage });
