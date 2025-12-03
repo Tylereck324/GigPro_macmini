@@ -48,8 +48,11 @@ describe('incomeSlice', () => {
 
       const result = await useStore.getState().addIncomeEntry({
         date: '2025-12-01',
-        platform: 'amazon_flex',
+        platform: 'AmazonFlex',
         amount: 100,
+        blockStartTime: '2025-12-01T10:00:00.000Z',
+        blockEndTime: '2025-12-01T14:00:00.000Z',
+        blockLength: 240,
       });
 
       expect(result).toEqual(newEntry);

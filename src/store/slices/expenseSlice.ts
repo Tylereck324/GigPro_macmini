@@ -137,9 +137,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   deleteFixedExpense: async (id: string) => {
     set({ expenseError: null });
-    try {
-      const original = get().fixedExpenses.find((e) => e.id === id);
+    const original = get().fixedExpenses.find((e) => e.id === id);
 
+    try {
       set((state) => ({
         fixedExpenses: state.fixedExpenses.filter((expense) => expense.id !== id),
       }));
@@ -220,9 +220,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   deleteVariableExpense: async (id: string) => {
     set({ expenseError: null });
-    try {
-      const original = get().variableExpenses.find((e) => e.id === id);
+    const original = get().variableExpenses.find((e) => e.id === id);
 
+    try {
       set((state) => ({
         variableExpenses: state.variableExpenses.filter((expense) => expense.id !== id),
       }));
@@ -231,7 +231,6 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete variable expense';
       set({ expenseError: errorMessage });
-      const original = get().variableExpenses.find((e) => e.id === id);
       if (original) {
         set((state) => ({
           variableExpenses: [...state.variableExpenses, original],
@@ -304,10 +303,10 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   deletePaymentPlan: async (id: string) => {
     set({ expenseError: null });
-    try {
-      const original = get().paymentPlans.find((p) => p.id === id);
-      const relatedPayments = get().paymentPlanPayments.filter((p) => p.paymentPlanId === id);
+    const original = get().paymentPlans.find((p) => p.id === id);
+    const relatedPayments = get().paymentPlanPayments.filter((p) => p.paymentPlanId === id);
 
+    try {
       set((state) => ({
         paymentPlans: state.paymentPlans.filter((plan) => plan.id !== id),
         paymentPlanPayments: state.paymentPlanPayments.filter(
@@ -319,9 +318,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete payment plan';
       set({ expenseError: errorMessage });
-      const original = get().paymentPlans.find((p) => p.id === id);
       if (original) {
-        const relatedPayments = get().paymentPlanPayments.filter((p) => p.paymentPlanId === id);
         set((state) => ({
           paymentPlans: [...state.paymentPlans, original],
           paymentPlanPayments: [...state.paymentPlanPayments, ...relatedPayments],
@@ -394,9 +391,9 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   deletePaymentPlanPayment: async (id: string) => {
     set({ expenseError: null });
-    try {
-      const original = get().paymentPlanPayments.find((p) => p.id === id);
+    const original = get().paymentPlanPayments.find((p) => p.id === id);
 
+    try {
       set((state) => ({
         paymentPlanPayments: state.paymentPlanPayments.filter((payment) => payment.id !== id),
       }));
@@ -405,7 +402,6 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete payment plan payment';
       set({ expenseError: errorMessage });
-      const original = get().paymentPlanPayments.find((p) => p.id === id);
       if (original) {
         set((state) => ({
           paymentPlanPayments: [...state.paymentPlanPayments, original],

@@ -11,7 +11,7 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* Calendar - takes 3 columns */}
-        <div className="lg:col-span-3 animate-slide-in">
+        <div className="lg:col-span-3">
           <MonthlyCalendar onDateChange={setCurrentDate} />
         </div>
 

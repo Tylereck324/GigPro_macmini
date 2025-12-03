@@ -26,7 +26,9 @@ export async function apiRequest<T>(
 
   if (!res.ok) {
     if (res.status === 401) {
-      window.location.href = '/login';
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Unauthorized');
     }
     const errorData = await res.json().catch(() => ({ error: 'Request failed' }));

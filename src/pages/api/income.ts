@@ -33,7 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabase
         .from('income_entries')
         .insert({
-          user_id: user.id,
           date: validatedData.date,
           platform: validatedData.platform,
           custom_platform_name: validatedData.customPlatformName,

@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { format, parseISO, parse, differenceInMinutes } from 'date-fns';
 import { Input } from '../ui';
 import { formatDuration } from '@/lib/utils/timeCalculations';
@@ -36,6 +36,24 @@ interface TimeCalculatorProps {
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Format ISO datetime string to 12-hour display format
+ * @example "2024-01-01T14:30:00" => "2:30 PM"
+ */
+const formatTimeDisplay = (isoString: string | null): string => {
+  if (!isoString) return '';
+  try {
+    const formatted = format(parseISO(isoString), 'p');
+    return formatted;
+  } catch (err) {
+    return '';
+  }
+};
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -51,20 +69,6 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
   // ============================================================================
   // Time Formatting
   // ============================================================================
-
-  /**
-   * Format ISO datetime string to 12-hour display format
-   * @example "2024-01-01T14:30:00" => "2:30 PM"
-   */
-  const formatTimeDisplay = useCallback((isoString: string | null): string => {
-    if (!isoString) return '';
-    try {
-      const formatted = format(parseISO(isoString), 'p');
-      return formatted;
-    } catch (err) {
-      return '';
-    }
-  }, []);
 
   /**
    * Parse various time input formats to ISO datetime string
@@ -85,6 +89,7 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
       // 2. Most specific 24-hour formats (expects two-digit minutes)
       { format: 'HH:mm', testInput: trimmed },            // e.g., "15:30"
       { format: 'H:mm', testInput: trimmed },             // e.g., "3:30"
+      { format: 'HHmm', testInput: trimmed },             // e.g., "1030"
 
       // 3. Flexible 12-hour (case-insensitive)
       { format: 'h:mm a', testInput: trimmed.toLowerCase() },
@@ -142,7 +147,7 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
       const newStart = value.blockStartTime ? formatTimeDisplay(value.blockStartTime) : '';
       setStartInput(newStart);
     }
-  }, [value.blockStartTime, startFocused, formatTimeDisplay]);
+  }, [value.blockStartTime, startFocused]);
 
   useEffect(() => {
     // Don't update end input while user is typing in it
@@ -150,7 +155,7 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
       const newEnd = value.blockEndTime ? formatTimeDisplay(value.blockEndTime) : '';
       setEndInput(newEnd);
     }
-  }, [value.blockEndTime, endFocused, formatTimeDisplay]);
+  }, [value.blockEndTime, endFocused]);
 
 
   // ============================================================================

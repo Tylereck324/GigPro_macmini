@@ -191,6 +191,7 @@ export function ExpensesContent() {
           {/* Forms */}
           {activeForm === 'fixed' && (
             <FixedExpenseForm
+              key={editingFixed ? editingFixed.id : 'new-fixed'}
               initialData={editingFixed ?? undefined}
               onSave={handleSaveFixed}
               onCancel={handleCancelForm}
@@ -199,6 +200,7 @@ export function ExpensesContent() {
 
           {activeForm === 'variable' && (
             <VariableExpenseForm
+              key={editingVariable ? editingVariable.id : 'new-variable'}
               initialData={editingVariable ?? undefined}
               onSave={handleSaveVariable}
               onCancel={handleCancelForm}
@@ -207,6 +209,7 @@ export function ExpensesContent() {
 
           {activeForm === 'payment' && (
             <PaymentPlanForm
+              key={editingPaymentPlan ? editingPaymentPlan.id : 'new-payment'}
               initialData={editingPaymentPlan ?? undefined}
               onSave={handleSavePaymentPlan}
               onCancel={handleCancelForm}

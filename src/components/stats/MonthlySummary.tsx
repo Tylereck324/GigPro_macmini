@@ -3,7 +3,7 @@
 import { useMemo, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card } from '@/components/ui';
-import { useIncomeStore, useExpenseStore, useGoalStore } from '@/store';
+import { useIncomeStore, useExpenseStore, useGoalStore, useDailyDataStore } from '@/store';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
 import { GoalProgressBar } from '@/components/goals/GoalProgressBar';
 import { calculatePrioritizedGoalProgress } from '@/lib/utils/goalCalculations';
@@ -16,6 +16,7 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
   const { incomeEntries, loadIncomeEntries } = useIncomeStore();
   const { fixedExpenses, variableExpenses, loadFixedExpenses, loadVariableExpenses } = useExpenseStore();
   const { goals, loadGoals } = useGoalStore();
+  const { dailyData, loadDailyData } = useDailyDataStore();
 
   // Load data on mount
   useEffect(() => {
@@ -23,7 +24,8 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
     loadFixedExpenses();
     loadVariableExpenses();
     loadGoals();
-  }, [loadIncomeEntries, loadFixedExpenses, loadVariableExpenses, loadGoals]);
+    loadDailyData();
+  }, [loadIncomeEntries, loadFixedExpenses, loadVariableExpenses, loadGoals, loadDailyData]);
 
   // Calculate monthly totals
   const monthlyTotals = useMemo(() => {
@@ -47,13 +49,19 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
     // Calculate net (income - bills - variable expenses)
     const net = totalIncome - totalBills - totalVariableExpenses;
 
+    // Calculate total miles for the month
+    const totalMiles = Object.values(dailyData)
+      .filter((data) => data.date >= monthStart && data.date <= monthEnd)
+      .reduce((sum, data) => sum + (data.mileage || 0), 0);
+
     return {
       totalIncome,
       totalBills,
       totalVariableExpenses,
       net,
+      totalMiles,
     };
-  }, [currentDate, incomeEntries, fixedExpenses, variableExpenses]);
+  }, [currentDate, incomeEntries, fixedExpenses, variableExpenses, dailyData]);
 
   // Get current monthly goals with prioritized allocation
   const currentMonthGoalProgress = useMemo(() => {
@@ -115,6 +123,14 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
             }`}
           >
             {formatCurrency(monthlyTotals.net)}
+          </div>
+        </div>
+
+        {/* Miles Driven */}
+        <div className="p-4 bg-secondary/10 border border-secondary/20 rounded-lg">
+          <div className="text-sm text-textSecondary mb-1">Miles Driven</div>
+          <div className="text-2xl font-bold text-secondary">
+            {new Intl.NumberFormat('en-US').format(monthlyTotals.totalMiles)} mi
           </div>
         </div>
 

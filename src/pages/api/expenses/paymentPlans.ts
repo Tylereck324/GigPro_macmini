@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabase
         .from('payment_plans')
         .insert({
-          user_id: user.id,
           name: validatedData.name,
           provider: validatedData.provider,
           initial_cost: validatedData.initialCost,

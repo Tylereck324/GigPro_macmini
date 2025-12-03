@@ -92,19 +92,25 @@ export function MonthlyCalendar({ onDateChange }: MonthlyCalendarProps) {
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => {
-          const dateKey = formatDateKey(day);
-          return (
-            <DayCell
-              key={dateKey}
-              date={day}
-              currentMonth={currentDate}
-              profit={profitByDate[dateKey] || null}
-            />
-          );
-        })}
-      </div>
+      {days.length > 0 ? (
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((day) => {
+            const dateKey = formatDateKey(day);
+            return (
+              <DayCell
+                key={dateKey}
+                date={day}
+                currentMonth={currentDate}
+                profit={profitByDate[dateKey] || null}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-10 text-textSecondary">
+          Unable to load calendar days.
+        </div>
+      )}
     </div>
   );
 }

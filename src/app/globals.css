@@ -7,36 +7,37 @@
   --color-primary: #2563EB;
   --color-primary-light: #60A5FA;
   --color-primary-dark: #1E40AF;
-  --color-secondary: #7C3AED;
-  --color-secondary-light: #A78BFA;
+  /* Modern Teal instead of Purple */
+  --color-secondary: #0D9488;
+  --color-secondary-light: #5EEAD4;
   --color-success: #059669;
   --color-success-light: #10B981;
   --color-danger: #DC2626;
   --color-danger-light: #EF4444;
   --color-warning: #D97706;
   --color-warning-light: #F59E0B;
-  --color-background: #FFFFFF;
-  --color-surface: #F8FAFC;
-  --color-surface-hover: #F1F5F9;
-  --color-text: #1E293B;
+  --color-background: #F0F4F8; /* Slightly off-white for depth */
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F8FAFC;
+  --color-text: #0F172A;
   --color-text-secondary: #64748B;
-  --color-border: #CBD5E1;
+  --color-border: #E2E8F0;
   --color-amazon-flex: #FF9900;
   --color-doordash: #FF3008;
   --color-walmart-spark: #0071CE;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  /* Shadows - Softer and more diffused */
+  --shadow-sm: 0 2px 4px rgba(148, 163, 184, 0.1);
+  --shadow-md: 0 4px 8px -2px rgba(148, 163, 184, 0.15);
+  --shadow-lg: 0 12px 20px -4px rgba(148, 163, 184, 0.15);
+  --shadow-xl: 0 25px 30px -5px rgba(148, 163, 184, 0.15);
+  --shadow-2xl: 0 35px 60px -15px rgba(148, 163, 184, 0.2);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
-  --gradient-success: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-  --gradient-danger: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
-  --gradient-surface: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+  /* Gradients - Modern Blue to Teal */
+  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #0D9488 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #34D399 100%);
+  --gradient-danger: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  --gradient-surface: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
 
   /* Responsive Typography - Mobile-first with clamp() */
   --font-size-xs: clamp(0.75rem, 2vw, 0.875rem);
@@ -68,20 +69,21 @@
   --color-primary: #60A5FA;
   --color-primary-light: #93C5FD;
   --color-primary-dark: #3B82F6;
-  --color-secondary: #A78BFA;
-  --color-secondary-light: #C4B5FD;
+  /* Vibrant Teal for Dark Mode */
+  --color-secondary: #2DD4BF;
+  --color-secondary-light: #99F6E4;
   --color-success: #34D399;
   --color-success-light: #6EE7B7;
   --color-danger: #F87171;
   --color-danger-light: #FCA5A5;
   --color-warning: #FBBF24;
   --color-warning-light: #FCD34D;
-  --color-background: #0A0E1A;
-  --color-surface: #1A1F2E;
-  --color-surface-hover: #252B3A;
-  --color-text: #F8FAFC;
+  --color-background: #0F172A; /* Slate 900 - slightly lighter than pure black */
+  --color-surface: #1E293B; /* Slate 800 */
+  --color-surface-hover: #334155; /* Slate 700 */
+  --color-text: #F1F5F9;
   --color-text-secondary: #94A3B8;
-  --color-border: #2D3748;
+  --color-border: #334155;
   --color-amazon-flex: #FFB84D;
   --color-doordash: #FF5733;
   --color-walmart-spark: #4A9EDB;
@@ -93,8 +95,8 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 
-  /* Dark gradients */
-  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  /* Dark gradients - Blue to Teal */
+  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%);
   --gradient-success: linear-gradient(135deg, #059669 0%, #10B981 100%);
   --gradient-danger: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
   --gradient-surface: linear-gradient(135deg, #1E293B 0%, #334155 100%);
@@ -114,7 +116,13 @@ body {
 
 body {
   color: var(--color-text);
-  background: var(--color-background);
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--color-background) 0%,
+    var(--color-surface-hover) 100%
+  );
+  background-attachment: fixed; /* Keep gradient fixed during scroll */
+  min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

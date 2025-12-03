@@ -1,9 +1,7 @@
-// src/contexts/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -16,44 +14,47 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Single user mock object
+const MOCK_USER: User = {
+  id: 'single-user-mode',
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: 'user@gigpro.local',
+  email_confirmed_at: new Date().toISOString(),
+  phone: '',
+  confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  app_metadata: {
+    provider: 'email',
+    providers: ['email'],
+  },
+  user_metadata: {},
+  identities: [],
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(MOCK_USER);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    // Check active session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
+  // No-op or auto-redirect
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    if (error) throw error;
+    // Simulate successful login
+    setUser(MOCK_USER);
     router.push('/');
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    router.push('/login');
+    // In single user mode, signOut effectively does nothing or redirects
+    // We can keep the user "logged in" conceptually
+    router.push('/');
   };
 
   const getToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token ?? null;
+    // Return a dummy token
+    return 'mock-token-single-user';
   };
 
   return (

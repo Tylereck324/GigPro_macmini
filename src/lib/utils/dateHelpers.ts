@@ -19,8 +19,8 @@ import {
 export function getCalendarDays(date: Date): Date[] {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 }

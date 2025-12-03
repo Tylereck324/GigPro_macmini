@@ -1,6 +1,6 @@
 // src/pages/api/settings.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 import { updateAppSettingsSchema } from '@/types/validation/settings.validation';
 import type { AppSettings, UpdateAppSettings } from '@/types/settings';
 import { getAuthenticatedUser } from '@/lib/api/auth';
@@ -10,12 +10,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await getAuthenticatedUser(req, res);
   if (!user) return; // Response already sent by getAuthenticatedUser
 
-  const SETTINGS_ID = user.id; // Use user ID as the settings ID for per-user settings
+  const SETTINGS_ID = 'settings'; // Use fixed ID for single-user mode
 
   switch (req.method) {
     case 'GET':
       try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('app_settings')
           .select('*')
           .eq('id', SETTINGS_ID)
@@ -23,13 +23,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (error) {
           console.error('Supabase select error:', error);
-          if (error.code === 'PGRST116') { // No rows found, try to insert default
-            // This case should ideally be handled by the initial SQL INSERT ON CONFLICT DO NOTHING
-            // but as a fallback, we can insert here if not found.
-            // For now, we'll just return a not found.
-            return res.status(404).json({ error: 'App settings not found' });
+          if (error.code === 'PGRST116') { // No rows found
+            // Auto-create default settings
+            const { data: newData, error: insertError } = await supabase
+              .from('app_settings')
+              .insert({
+                id: SETTINGS_ID,
+                theme: 'light',
+                amazon_flex_daily_capacity: 480,
+                amazon_flex_weekly_capacity: 2400
+              })
+              .select()
+              .maybeSingle();
+            
+            if (insertError) {
+              console.error('Failed to create default settings:', insertError);
+              return res.status(500).json({ error: `Failed to create default settings: ${insertError.message}` });
+            }
+
+            if (!newData) {
+               return res.status(500).json({ error: 'Failed to create default settings: No data returned. Check Database RLS policies.' });
+            }
+            
+            // Use the newly created data
+            data = newData;
+          } else {
+            return res.status(500).json({ error: error.message });
           }
-          return res.status(500).json({ error: error.message });
+        } else {
+            // data is already populated from the select
         }
 
         // Map snake_case to camelCase

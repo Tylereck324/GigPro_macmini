@@ -27,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabase
         .from('daily_data')
         .insert({
-          user_id: user.id,
           date: validatedData.date,
           mileage: validatedData.mileage,
           gas_expense: validatedData.gasExpense,
@@ -125,7 +124,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { data, error } = await supabase
           .from('daily_data')
           .insert({
-            user_id: user.id,
             date,
             mileage: validatedData.mileage ?? null,
             gas_expense: validatedData.gasExpense ?? null,

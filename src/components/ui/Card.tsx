@@ -27,9 +27,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           'rounded-2xl transition-all duration-300 ease-out',
           {
             // Variants
-            'bg-surface border border-border': variant === 'default',
-            'bg-gradient-to-br from-surface to-background border border-border/50 backdrop-blur-sm': variant === 'gradient',
-            'bg-surface/80 border-2 border-primary/20 backdrop-blur-sm': variant === 'bordered',
+            'bg-surface/80 backdrop-blur-md border border-white/20': variant === 'default',
+            'bg-gradient-to-br from-surface to-background border border-white/20 backdrop-blur-md': variant === 'gradient',
+            'bg-surface/50 border-2 border-primary/20 backdrop-blur-md': variant === 'bordered',
 
             // Elevation / Shadows
             'shadow-md': !elevated,

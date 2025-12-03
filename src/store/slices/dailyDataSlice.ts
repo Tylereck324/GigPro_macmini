@@ -39,12 +39,13 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
 
   updateDailyData: async (date: string, data: Partial<UpdateDailyData>) => {
     set({ dailyDataError: null });
+    
+    // Store original for rollback
+    const original = get().dailyData[date];
+
     try {
       // Validate input
       const validatedData = updateDailyDataSchema.parse(data);
-
-      // Store original for rollback
-      const original = get().dailyData[date];
 
       // Optimistic update
       set((state) => ({

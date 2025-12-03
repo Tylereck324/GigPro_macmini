@@ -63,12 +63,12 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
 
   updateGoal: async (id: string, updates: UpdateGoal) => {
     set({ goalsError: null });
+    // Store original for rollback
+    const original = get().goals.find((g) => g.id === id);
+
     try {
       // Validate input
       const validatedUpdates = updateGoalSchema.parse(updates);
-
-      // Store original for rollback
-      const original = get().goals.find((g) => g.id === id);
 
       // Optimistic update
       set((state) => ({
@@ -94,10 +94,10 @@ export const createGoalSlice: StateCreator<GoalSlice> = (set, get) => ({
 
   deleteGoal: async (id: string) => {
     set({ goalsError: null });
-    try {
-      // Store original for rollback
-      const original = get().goals.find((g) => g.id === id);
+    // Store original for rollback
+    const original = get().goals.find((g) => g.id === id);
 
+    try {
       // Optimistic delete
       set((state) => ({
         goals: state.goals.filter((goal) => goal.id !== id),
