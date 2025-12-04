@@ -13,6 +13,7 @@ export function Header() {
 
   const links = [
     { href: '/', label: 'Calendar', icon: '📅' },
+    { href: '/trends', label: 'Trends', icon: '📈' },
     { href: '/goals', label: 'Goals', icon: '🎯' },
     { href: '/expenses', label: 'Expenses', icon: '💰' },
     { href: '/settings', label: 'Settings', icon: '⚙️' },
