@@ -45,7 +45,7 @@ export interface ExpenseSlice {
   deleteFixedExpense: (id: string) => Promise<void>;
 
   // Variable Expenses Actions
-  loadVariableExpenses: () => Promise<void>;
+  loadVariableExpenses: () => Promise<void>; // Reverted to no month parameter
   addVariableExpense: (expense: CreateVariableExpense) => Promise<VariableExpense>;
   updateVariableExpense: (id: string, updates: UpdateVariableExpense) => Promise<void>;
   deleteVariableExpense: (id: string) => Promise<void>;
@@ -57,7 +57,7 @@ export interface ExpenseSlice {
   deletePaymentPlan: (id: string) => Promise<void>;
 
   // Payment Plan Payments Actions
-  loadPaymentPlanPayments: () => Promise<void>;
+  loadPaymentPlanPayments: () => Promise<void>; // Reverted to no planId parameter
   addPaymentPlanPayment: (payment: CreatePaymentPlanPayment) => Promise<PaymentPlanPayment>;
   updatePaymentPlanPayment: (id: string, updates: UpdatePaymentPlanPayment) => Promise<void>;
   deletePaymentPlanPayment: (id: string) => Promise<void>;
@@ -161,7 +161,7 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadVariableExpenses: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const expenses = await variableExpensesApi.getVariableExpenses();
+      const expenses = await variableExpensesApi.getVariableExpenses(); // Call without month argument
       set({ variableExpenses: expenses, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load variable expenses';
@@ -332,7 +332,8 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   loadPaymentPlanPayments: async () => {
     set({ expenseLoading: true, expenseError: null });
     try {
-      const payments = await paymentPlanPaymentsApi.getPaymentPlanPayments();
+      // Original API did not take planId, so fetch all payments
+      const payments = await paymentPlanPaymentsApi.getPaymentPlanPayments(); // Call without planId argument
       set({ paymentPlanPayments: payments, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load payment plan payments';

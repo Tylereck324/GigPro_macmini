@@ -5,7 +5,6 @@ import { Header } from "@/components/layout/Header";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ThemeScript } from "@/components/providers/ThemeScript";
 import { ErrorBoundary } from "@/components/errors";
-import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,7 +36,6 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeScript />
         <ErrorBoundary>
-          <AuthProvider>
             <ThemeProvider>
               <div className="min-h-screen bg-background transition-colors duration-300">
                 <Header />
@@ -67,7 +65,6 @@ export default function RootLayout({
                 />
               </div>
             </ThemeProvider>
-          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

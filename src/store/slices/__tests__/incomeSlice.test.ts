@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { create } from 'zustand';
+import { create, StoreApi, UseBoundStore } from 'zustand';
 import { createIncomeSlice, IncomeSlice } from '../incomeSlice';
 import { incomeApi } from '@/lib/api/income';
 import { createMockIncomeEntry } from '@/test/utils';
@@ -8,7 +8,7 @@ import { createMockIncomeEntry } from '@/test/utils';
 vi.mock('@/lib/api/income');
 
 describe('incomeSlice', () => {
-  let useStore: ReturnType<typeof create<IncomeSlice>>;
+  let useStore: UseBoundStore<StoreApi<IncomeSlice>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,6 +53,7 @@ describe('incomeSlice', () => {
         blockStartTime: '2025-12-01T10:00:00.000Z',
         blockEndTime: '2025-12-01T14:00:00.000Z',
         blockLength: 240,
+        notes: '',
       });
 
       expect(result).toEqual(newEntry);

@@ -9,13 +9,33 @@ import { gigPlatformSchema } from './common.validation';
 // Income Entry Validation
 // ============================================================================
 
+const normalizeDatetime = (val: unknown) => {
+  if (typeof val === 'string') {
+    try {
+      // First try to create a date object
+      const date = new Date(val);
+      // If valid date, return standard ISO string (which Zod accepts)
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    } catch (e) {
+      // If Date parsing fails, fall back to simple string replacement
+    }
+    
+    if (val.includes(' ')) {
+      return val.replace(' ', 'T');
+    }
+  }
+  return val;
+};
+
 const incomeEntryBaseSchema = z.object({
   id: z.string().min(1, 'ID is required'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   platform: gigPlatformSchema,
   customPlatformName: z.string().optional(),
-  blockStartTime: z.string().datetime().nullable(),
-  blockEndTime: z.string().datetime().nullable(),
+  blockStartTime: z.preprocess(normalizeDatetime, z.string().datetime().nullable()),
+  blockEndTime: z.preprocess(normalizeDatetime, z.string().datetime().nullable()),
   blockLength: z.number().int().nonnegative().nullable(),
   amount: z.number().positive('Amount must be positive'),
   notes: z.string().default(''),

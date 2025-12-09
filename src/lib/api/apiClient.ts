@@ -1,44 +1,36 @@
 // src/lib/api/apiClient.ts
-import { supabase } from '@/lib/supabase';
+// This is a generic API client that was used by the original API wrappers.
+// It assumes a Next.js /api route structure.
 
-export async function getAuthHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
+interface ApiRequestOptions extends RequestInit {
+  params?: Record<string, string>;
 }
 
 export async function apiRequest<T>(
   url: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(url, {
-    ...options,
+  const { params, body, ...rest } = options;
+  let queryString = '';
+
+  if (params) {
+    const usp = new URLSearchParams(params);
+    queryString = `?${usp.toString()}`;
+  }
+
+  const response = await fetch(`${url}${queryString}`, {
+    ...rest,
     headers: {
-      ...headers,
-      ...options.headers,
+      'Content-Type': 'application/json',
+      ...rest.headers,
     },
+    body: body instanceof FormData ? body : JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
-    }
-    const errorData = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(errorData.error || `Request failed with status ${res.status}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(errorData.message || 'API request failed');
   }
 
-  // Return empty for 204 No Content
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  return res.json();
+  return response.json();
 }

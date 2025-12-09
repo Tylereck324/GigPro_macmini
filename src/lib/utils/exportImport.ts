@@ -4,6 +4,7 @@ import type { ExportData } from '@/types/settings';
 
 /**
  * Export all data to JSON file
+ * In single-user mode, this fetches all data without user_id filtering.
  */
 export async function exportData(): Promise<void> {
   try {
@@ -23,7 +24,7 @@ export async function exportData(): Promise<void> {
       supabase.from('variable_expenses').select('*'),
       supabase.from('payment_plans').select('*'),
       supabase.from('payment_plan_payments').select('*'),
-      supabase.from('app_settings').select('*').eq('id', 'settings').single(),
+      supabase.from('app_settings').select('*').eq('id', 'settings').maybeSingle(), // Use maybeSingle now that it might not exist
     ]);
 
     // Map data from snake_case to camelCase
@@ -69,8 +70,8 @@ export async function exportData(): Promise<void> {
           month: entry.month,
           isPaid: entry.is_paid,
           paidDate: entry.paid_date,
-          createdAt: new Date(entry.created_at).getTime(),
-          updatedAt: new Date(entry.updated_at).getTime(),
+          createdAt: new Date(entry.createdAt).getTime(),
+          updatedAt: new Date(entry.updatedAt).getTime(),
         })),
         paymentPlans: (paymentPlans || []).map((entry: any) => ({
           id: entry.id,
@@ -149,6 +150,7 @@ export async function exportData(): Promise<void> {
 
 /**
  * Import data from JSON file
+ * In single-user mode, this inserts data directly without user_id attribution.
  */
 export async function importData(file: File): Promise<void> {
   try {
@@ -166,7 +168,7 @@ export async function importData(file: File): Promise<void> {
       throw new Error('Invalid export file format');
     }
 
-    // Clear existing data
+    // Clear existing data (all data, no user_id filter needed)
     await Promise.all([
       supabase.from('income_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
       supabase.from('daily_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -305,6 +307,16 @@ export async function importData(file: File): Promise<void> {
       }
     }
 
+    // Import settings
+    if (imported.data.settings) {
+      // For single-user, we expect one settings entry with id 'settings'
+      const { error: upsertError } = await supabase
+        .from('app_settings')
+        .upsert({ ...imported.data.settings, id: 'settings' }, { onConflict: 'id' });
+      if (upsertError) throw new Error(`Failed to import settings: ${upsertError.message}`);
+    }
+
+
     // Update last import date in settings
     await supabase
       .from('app_settings')
@@ -339,7 +351,7 @@ export async function getDataStats() {
     supabase.from('fixed_expenses').select('*', { count: 'exact', head: true }),
     supabase.from('variable_expenses').select('*', { count: 'exact', head: true }),
     supabase.from('payment_plans').select('*', { count: 'exact', head: true }),
-    supabase.from('app_settings').select('*').eq('id', 'settings').single(),
+    supabase.from('app_settings').select('*').eq('id', 'settings').maybeSingle(),
   ]);
 
   return {

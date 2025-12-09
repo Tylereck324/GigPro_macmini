@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Button, Input, Select, Card } from '../ui';
 import { TimeCalculator } from './TimeCalculator';
@@ -27,6 +27,28 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
   const [amount, setAmount] = useState(initialData?.amount?.toString() ?? '');
   const [notes, setNotes] = useState(initialData?.notes ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update form state when initialData changes (e.g. when entering edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setPlatform(initialData.platform);
+      setCustomPlatformName(initialData.customPlatformName ?? '');
+      setTimeData({
+        blockStartTime: initialData.blockStartTime,
+        blockEndTime: initialData.blockEndTime,
+        blockLength: initialData.blockLength,
+      });
+      setAmount(initialData.amount.toString());
+      setNotes(initialData.notes);
+    } else {
+      // Reset form when exiting edit mode
+      setPlatform('');
+      setCustomPlatformName('');
+      setTimeData({ blockStartTime: null, blockEndTime: null, blockLength: null });
+      setAmount('');
+      setNotes('');
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

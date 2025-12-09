@@ -1,5 +1,6 @@
 import { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
+import { GigPlatform } from '@/types/common';
 
 // Custom render function that wraps components with providers if needed
 export function renderWithProviders(
@@ -31,8 +32,8 @@ export function createMockIncomeEntry(overrides = {}) {
   return {
     id: 'test-id-1',
     date: '2025-12-01',
-    platform: 'amazon_flex',
-    customPlatformName: null,
+    platform: 'AmazonFlex' as GigPlatform,
+    customPlatformName: undefined,
     blockStartTime: '2025-12-01T10:00:00Z',
     blockEndTime: '2025-12-01T14:00:00Z',
     blockLength: 240,

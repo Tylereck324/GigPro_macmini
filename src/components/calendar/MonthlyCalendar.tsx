@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import { CalendarHeader } from './CalendarHeader';
 import { DayCell } from './DayCell';
@@ -17,7 +17,6 @@ interface MonthlyCalendarProps {
 
 export function MonthlyCalendar({ onDateChange }: MonthlyCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [profitByDate, setProfitByDate] = useState<Record<string, DailyProfit>>({});
 
   const { incomeEntries, loadIncomeEntries } = useIncomeStore();
   const { dailyData, loadDailyData } = useDailyDataStore();
@@ -28,20 +27,19 @@ export function MonthlyCalendar({ onDateChange }: MonthlyCalendarProps) {
     loadDailyData();
   }, [loadIncomeEntries, loadDailyData]);
 
-  // Calculate profit for all visible days whenever data changes
-  useEffect(() => {
-    const days = getCalendarDays(currentDate);
-    const newProfitByDate: Record<string, DailyProfit> = {};
+  const days = useMemo(() => getCalendarDays(currentDate), [currentDate]);
 
+  // Calculate profit for all visible days efficiently
+  const profitByDate = useMemo(() => {
+    const newProfitByDate: Record<string, DailyProfit> = {};
     days.forEach((day) => {
       const dateKey = formatDateKey(day);
       const dayData = dailyData[dateKey];
       const profit = calculateDailyProfit(dateKey, incomeEntries, dayData);
       newProfitByDate[dateKey] = profit;
     });
-
-    setProfitByDate(newProfitByDate);
-  }, [currentDate, incomeEntries, dailyData]);
+    return newProfitByDate;
+  }, [days, dailyData, incomeEntries]);
 
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => {
@@ -68,8 +66,6 @@ export function MonthlyCalendar({ onDateChange }: MonthlyCalendarProps) {
       hasNotifiedInitialDate.current = true;
     }
   }, [currentDate, onDateChange]);
-
-  const days = getCalendarDays(currentDate);
 
   return (
     <div className="w-full">

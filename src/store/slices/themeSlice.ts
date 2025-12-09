@@ -62,13 +62,6 @@ export const createThemeSlice: StateCreator<ThemeSlice> = (set, get) => ({
       applyTheme(settings.theme); // Apply theme from API as ultimate source
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load theme and settings';
-      
-      // Ignore unauthorized errors (expected when not logged in)
-      if (errorMessage === 'Unauthorized') {
-        set({ themeLoading: false });
-        return;
-      }
-
       console.error('Failed to load theme and settings:', error);
       set({ themeLoading: false, themeError: errorMessage });
       throw error;
