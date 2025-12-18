@@ -100,6 +100,10 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
 
   deleteIncomeEntry: async (id: string) => {
     set({ incomeError: null });
+
+    // Capture original BEFORE optimistic delete
+    const original = get().incomeEntries.find((entry) => entry.id === id);
+
     try {
       // Optimistic delete
       set((state) => ({
@@ -111,9 +115,15 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete income entry';
       set({ incomeError: errorMessage });
-      // Rollback on error - fetch fresh data or store original for rollback
-      // For simplicity, we'll just log the error and let the user re-try or refresh
-      console.error('Failed to delete income entry, consider refetching data:', error);
+
+      // Rollback using stored original
+      if (original) {
+        set((state) => ({
+          incomeEntries: [...state.incomeEntries, original],
+        }));
+      }
+
+      console.error('Failed to delete income entry:', error);
       throw error;
     }
   },

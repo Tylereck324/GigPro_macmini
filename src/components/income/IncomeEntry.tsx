@@ -58,8 +58,10 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
       return;
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error('Please enter a valid amount');
+    // Validate amount with comprehensive checks
+    const amountValue = parseFloat(amount);
+    if (!amount || isNaN(amountValue) || !isFinite(amountValue) || amountValue <= 0) {
+      toast.error('Please enter a valid amount greater than zero');
       return;
     }
 
@@ -77,7 +79,7 @@ export function IncomeEntryForm({ date, initialData, onSave, onCancel }: IncomeE
         blockStartTime: timeData.blockStartTime,
         blockEndTime: timeData.blockEndTime,
         blockLength: timeData.blockLength,
-        amount: parseFloat(amount),
+        amount: amountValue,  // Use validated variable
         notes,
       });
 

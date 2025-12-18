@@ -5,30 +5,51 @@ import { supabase } from '../supabase'; // Use global supabase client
 // Helper function to map snake_case to camelCase
 const normalizeDate = (dateStr: string | null): string | null => {
   if (!dateStr) return null;
+
   try {
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       return date.toISOString();
     }
   } catch (e) {
-    // Fall through to string replacement
+    console.warn('Failed to parse date, attempting string replacement:', dateStr);
   }
-  return dateStr.replace(' ', 'T');
+
+  // Safe string replacement with fallback
+  try {
+    return dateStr.replace(' ', 'T');
+  } catch (e) {
+    console.error('Failed to normalize date:', dateStr, e);
+    return null;
+  }
 };
 
-const mapIncomeEntry = (entry: any): IncomeEntry => ({
-  id: entry.id,
-  date: entry.date,
-  platform: entry.platform,
-  customPlatformName: entry.custom_platform_name,
-  blockStartTime: normalizeDate(entry.block_start_time),
-  blockEndTime: normalizeDate(entry.block_end_time),
-  blockLength: entry.block_length,
-  amount: entry.amount,
-  notes: entry.notes,
-  createdAt: new Date(entry.created_at).getTime(),
-  updatedAt: new Date(entry.updated_at).getTime(),
-});
+const mapIncomeEntry = (entry: any): IncomeEntry => {
+  const createdAt = new Date(entry.created_at).getTime();
+  const updatedAt = new Date(entry.updated_at).getTime();
+
+  // Validate timestamps to prevent NaN propagation
+  if (isNaN(createdAt)) {
+    throw new Error(`Invalid created_at timestamp: ${entry.created_at}`);
+  }
+  if (isNaN(updatedAt)) {
+    throw new Error(`Invalid updated_at timestamp: ${entry.updated_at}`);
+  }
+
+  return {
+    id: entry.id,
+    date: entry.date,
+    platform: entry.platform,
+    customPlatformName: entry.custom_platform_name,
+    blockStartTime: normalizeDate(entry.block_start_time),
+    blockEndTime: normalizeDate(entry.block_end_time),
+    blockLength: entry.block_length,
+    amount: entry.amount,
+    notes: entry.notes,
+    createdAt,
+    updatedAt,
+  };
+};
 
 export const incomeApi = {
   async createIncomeEntry(entry: CreateIncomeEntry): Promise<IncomeEntry> {

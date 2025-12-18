@@ -30,9 +30,9 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0 }: D
   const today = isDateToday(date);
   const dateKey = formatDateKey(date);
 
-  const hasIncome = profit && profit.totalIncome > 0;
-  const isProfitable = profit && profit.profit > 0;
-  const isLoss = profit && profit.profit < 0;
+  const hasIncome = profit && !isNaN(profit.totalIncome) && profit.totalIncome > 0;
+  const isProfitable = profit && !isNaN(profit.profit) && profit.profit > 0;
+  const isLoss = profit && !isNaN(profit.profit) && profit.profit < 0;
 
   const handleClick = () => {
     try {

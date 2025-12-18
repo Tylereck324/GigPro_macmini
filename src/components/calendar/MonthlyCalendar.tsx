@@ -51,11 +51,13 @@ export function MonthlyCalendar({ onDateChange, isLoading = false }: MonthlyCale
 
     try {
       // Pre-filter income entries to only those in the visible date range
-      const startDate = days[0] ? formatDateKey(days[0]) : '';
-      const endDate = days[days.length - 1] ? formatDateKey(days[days.length - 1]) : '';
-      const relevantIncome = incomeEntries.filter(
-        (entry) => entry.date >= startDate && entry.date <= endDate
-      );
+      const startDate = days[0] ? formatDateKey(days[0]) : null;
+      const endDate = days[days.length - 1] ? formatDateKey(days[days.length - 1]) : null;
+
+      // Only filter if we have valid date range
+      const relevantIncome = (startDate && endDate)
+        ? incomeEntries.filter((entry) => entry.date >= startDate && entry.date <= endDate)
+        : incomeEntries; // Fallback to all entries if date range is invalid
 
       // Group income by date for O(1) lookups
       const incomeByDate: Record<string, IncomeEntry[]> = {};

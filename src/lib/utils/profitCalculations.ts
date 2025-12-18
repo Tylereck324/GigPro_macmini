@@ -24,26 +24,55 @@ export function calculateDailyProfit(
   incomeEntries: IncomeEntry[],
   dailyData: DailyData | undefined
 ): DailyProfit {
-  // Calculate total income for the day
+  // Calculate total income for the day with validation
   const dayIncomeEntries = incomeEntries.filter((entry) => entry.date === date);
-  const totalIncome = dayIncomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalIncome = dayIncomeEntries.reduce((sum, entry) => {
+    const amount = typeof entry.amount === 'number' && !isNaN(entry.amount) && isFinite(entry.amount)
+      ? entry.amount
+      : 0;
+    return sum + amount;
+  }, 0);
 
-  // Get gas expense
-  const gasExpense = dailyData?.gasExpense ?? 0;
+  // Get gas expense with validation
+  const gasExpense = typeof dailyData?.gasExpense === 'number' &&
+                     !isNaN(dailyData.gasExpense) &&
+                     isFinite(dailyData.gasExpense)
+    ? dailyData.gasExpense
+    : 0;
 
-  // Calculate profit
+  // Calculate profit with validation
   const profit = totalIncome - gasExpense;
+  if (!isFinite(profit)) {
+    console.error('Invalid profit calculation:', { totalIncome, gasExpense });
+    return {
+      date,
+      totalIncome: 0,
+      gasExpense: 0,
+      profit: 0,
+      earningsPerMile: null,
+    };
+  }
 
-  // Calculate earnings per mile
-  const mileage = dailyData?.mileage ?? 0;
+  // Calculate earnings per mile with validation
+  const mileage = typeof dailyData?.mileage === 'number' &&
+                  !isNaN(dailyData.mileage) &&
+                  isFinite(dailyData.mileage)
+    ? dailyData.mileage
+    : 0;
+
   const earningsPerMile = mileage > 0 ? totalIncome / mileage : null;
+
+  // Validate earningsPerMile
+  if (earningsPerMile !== null && (!isFinite(earningsPerMile) || isNaN(earningsPerMile))) {
+    console.warn('Invalid earnings per mile calculation:', { totalIncome, mileage });
+  }
 
   return {
     date,
     totalIncome,
     gasExpense,
     profit,
-    earningsPerMile,
+    earningsPerMile: (earningsPerMile !== null && isFinite(earningsPerMile)) ? earningsPerMile : null,
   };
 }
 
@@ -83,7 +112,12 @@ export function getIncomeSummaryByPlatform(incomeEntries: IncomeEntry[]): Record
  * @returns Total income amount
  */
 export function getTotalIncome(incomeEntries: IncomeEntry[]): number {
-  return incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  return incomeEntries.reduce((sum, entry) => {
+    const amount = typeof entry.amount === 'number' && !isNaN(entry.amount) && isFinite(entry.amount)
+      ? entry.amount
+      : 0;
+    return sum + amount;
+  }, 0);
 }
 
 // ============================================================================
