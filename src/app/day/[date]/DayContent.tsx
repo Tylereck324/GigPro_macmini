@@ -31,7 +31,6 @@ export function DayContent({ date }: DayContentProps) {
     addIncomeEntry,
     updateIncomeEntry,
     deleteIncomeEntry,
-    getIncomeByDate,
   } = useIncomeStore();
 
   const { dailyData, loadDailyData, updateDailyData, getDailyData } = useDailyDataStore();

@@ -27,7 +27,6 @@ export const useIncomeStore = () => useStore((state) => ({
   addIncomeEntry: state.addIncomeEntry,
   updateIncomeEntry: state.updateIncomeEntry,
   deleteIncomeEntry: state.deleteIncomeEntry,
-  getIncomeByDate: state.getIncomeByDate,
   clearError: state.clearIncomeError,
 }));
 

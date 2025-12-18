@@ -2,6 +2,7 @@
 
 import { Card } from '../ui';
 import { getIncomeSummaryByPlatform, formatCurrency } from '@/lib/utils/profitCalculations';
+import { getPlatformColor, getPlatformLabel } from '@/lib/utils/platformHelpers';
 import type { IncomeEntry } from '@/types/income';
 import clsx from 'clsx';
 
@@ -16,32 +17,6 @@ export function IncomeSummary({ entries }: IncomeSummaryProps) {
 
   const summary = getIncomeSummaryByPlatform(entries);
   const platforms = Object.keys(summary);
-
-  const getPlatformColor = (platform: string) => {
-    switch (platform) {
-      case 'AmazonFlex':
-        return 'text-amazonFlex';
-      case 'DoorDash':
-        return 'text-doorDash';
-      case 'WalmartSpark':
-        return 'text-walmartSpark';
-      default:
-        return 'text-primary';
-    }
-  };
-
-  const getPlatformLabel = (platform: string) => {
-    switch (platform) {
-      case 'AmazonFlex':
-        return 'Amazon Flex';
-      case 'DoorDash':
-        return 'DoorDash';
-      case 'WalmartSpark':
-        return 'Walmart Spark';
-      default:
-        return platform;
-    }
-  };
 
   return (
     <Card>

@@ -18,6 +18,7 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Card, Button, ConfirmDialog } from '../ui';
 import { formatDuration } from '@/lib/utils/timeCalculations';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { getPlatformColor, getPlatformLabel } from '@/lib/utils/platformHelpers';
 import type { IncomeEntry } from '@/types/income';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -39,45 +40,6 @@ interface IncomeListProps {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Get platform-specific color class
- */
-function getPlatformColor(platform: string): string {
-  switch (platform) {
-    case 'AmazonFlex':
-      return 'text-amazonFlex';
-    case 'DoorDash':
-      return 'text-doorDash';
-    case 'WalmartSpark':
-      return 'text-walmartSpark';
-    default:
-      return 'text-primary';
-  }
-}
-
-/**
- * Get display label for platform
- * Converts technical names to user-friendly labels
- */
-function getPlatformLabel(entry: IncomeEntry): string {
-  if (entry.platform === 'Other' && entry.customPlatformName) {
-    return entry.customPlatformName;
-  }
-
-  switch (entry.platform) {
-    case 'AmazonFlex':
-      return 'Amazon Flex';
-    case 'DoorDash':
-      return 'DoorDash';
-    case 'WalmartSpark':
-      return 'Walmart Spark';
-    case 'Other':
-      return 'Other';
-    default:
-      return entry.platform;
-  }
-}
 
 /**
  * Format ISO datetime string to readable time

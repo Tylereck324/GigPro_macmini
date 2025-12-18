@@ -167,17 +167,4 @@ describe('incomeSlice', () => {
       expect(useStore.getState().incomeError).toBe('Delete failed');
     });
   });
-
-  describe('getIncomeByDate', () => {
-    it('should filter entries by date', () => {
-      const entry1 = createMockIncomeEntry({ id: '1', date: '2025-12-01' });
-      const entry2 = createMockIncomeEntry({ id: '2', date: '2025-12-02' });
-
-      useStore.setState({ incomeEntries: [entry1, entry2] });
-
-      const result = useStore.getState().getIncomeByDate('2025-12-01');
-
-      expect(result).toEqual([entry1]);
-    });
-  });
 });

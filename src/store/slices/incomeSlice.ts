@@ -13,7 +13,6 @@ export interface IncomeSlice {
   addIncomeEntry: (entry: CreateIncomeEntry) => Promise<IncomeEntry>;
   updateIncomeEntry: (id: string, updates: UpdateIncomeEntry) => Promise<void>;
   deleteIncomeEntry: (id: string) => Promise<void>;
-  getIncomeByDate: (date: string) => IncomeEntry[];
   clearIncomeError: () => void;
 }
 
@@ -126,10 +125,6 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       console.error('Failed to delete income entry:', error);
       throw error;
     }
-  },
-
-  getIncomeByDate: (date: string) => {
-    return get().incomeEntries.filter((entry) => entry.date === date);
   },
 
   clearIncomeError: () => {

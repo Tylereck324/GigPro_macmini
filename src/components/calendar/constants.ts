@@ -4,8 +4,6 @@
  */
 
 // Grid configuration
-export const CALENDAR_COLUMNS = 7;
-export const CALENDAR_MIN_ROWS = 5;
 export const SKELETON_CELL_COUNT = 35;
 
 // Cell dimensions - Balanced calendar cells
@@ -24,7 +22,6 @@ export const CELL_HOVER_TRANSFORM = 'hover:shadow-sm hover:border-border/60';
 
 // Focus and interaction - Clear focus state
 export const FOCUS_RING = 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1';
-export const RING_OFFSET = 'ring-offset-1';
 
 // Indicator sizes - Visible but not intrusive
 export const PROFIT_INDICATOR_SIZE = 'w-1.5 h-1.5';
@@ -34,8 +31,3 @@ export const GRID_GAP = 'gap-0';
 
 // Weekday names
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
-// Opacity values
-export const OPACITY_DIMMED = 'opacity-50';
-export const OPACITY_BACKGROUND = 'bg-background/50';
-export const OPACITY_SURFACE = 'bg-surface/50';
