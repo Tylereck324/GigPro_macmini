@@ -1,31 +1,25 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card } from '@/components/ui';
-import { useIncomeStore, useExpenseStore, useGoalStore, useDailyDataStore } from '@/store';
+import { useStore } from '@/store';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
 import { GoalProgressBar } from '@/components/goals/GoalProgressBar';
 import { calculatePrioritizedGoalProgress } from '@/lib/utils/goalCalculations';
 
 interface MonthlySummaryProps {
   currentDate: Date;
+  isLoading?: boolean;
 }
 
-export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
-  const { incomeEntries, loadIncomeEntries } = useIncomeStore();
-  const { fixedExpenses, variableExpenses, loadFixedExpenses, loadVariableExpenses } = useExpenseStore();
-  const { goals, loadGoals } = useGoalStore();
-  const { dailyData, loadDailyData } = useDailyDataStore();
-
-  // Load data on mount
-  useEffect(() => {
-    loadIncomeEntries();
-    loadFixedExpenses();
-    loadVariableExpenses();
-    loadGoals();
-    loadDailyData();
-  }, [loadIncomeEntries, loadFixedExpenses, loadVariableExpenses, loadGoals, loadDailyData]);
+export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummaryProps) {
+  // Optimized selectors - only subscribe to specific data
+  const incomeEntries = useStore((state) => state.incomeEntries);
+  const fixedExpenses = useStore((state) => state.fixedExpenses);
+  const variableExpenses = useStore((state) => state.variableExpenses);
+  const goals = useStore((state) => state.goals);
+  const dailyData = useStore((state) => state.dailyData);
 
   // Calculate monthly totals
   const monthlyTotals = useMemo(() => {
@@ -49,10 +43,10 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
     // Calculate net (income - bills - variable expenses)
     const net = totalIncome - totalBills - totalVariableExpenses;
 
-    // Calculate total miles for the month
-    const totalMiles = Object.values(dailyData)
-      .filter((data) => data.date >= monthStart && data.date <= monthEnd)
-      .reduce((sum, data) => sum + (data.mileage || 0), 0);
+    // Calculate total miles for the month (optimized - filter keys instead of values)
+    const totalMiles = Object.keys(dailyData)
+      .filter((date) => date >= monthStart && date <= monthEnd)
+      .reduce((sum, date) => sum + (dailyData[date].mileage || 0), 0);
 
     return {
       totalIncome,
@@ -78,6 +72,22 @@ export function MonthlySummary({ currentDate }: MonthlySummaryProps) {
   }, [currentDate, goals, incomeEntries]);
 
   const monthName = format(currentDate, 'MMMM yyyy');
+
+  if (isLoading) {
+    return (
+      <Card>
+        <h2 className="text-xl font-semibold text-text mb-4">{monthName} Summary</h2>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="p-4 bg-surface/50 rounded-lg animate-pulse">
+              <div className="h-4 w-24 bg-border rounded mb-2"></div>
+              <div className="h-8 w-32 bg-border rounded"></div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card>
