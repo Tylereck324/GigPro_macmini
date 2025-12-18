@@ -3,14 +3,57 @@ import type {
   FixedExpense, CreateFixedExpense, UpdateFixedExpense,
   VariableExpense, CreateVariableExpense, UpdateVariableExpense,
   PaymentPlan, CreatePaymentPlan, UpdatePaymentPlan,
-  PaymentPlanPayment, CreatePaymentPlanPayment, UpdatePaymentPlanPayment
 } from '@/types/expense';
+import type { ExpenseCategory, PaymentFrequency, PaymentPlanProvider } from '@/types/common';
 import { supabase } from '../supabase'; // Use global supabase client
+
+// ============================================================================
+// Database Types (snake_case from Supabase)
+// ============================================================================
+interface FixedExpenseDb {
+  id: string;
+  name: string;
+  amount: number;
+  due_date: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface VariableExpenseDb {
+  id: string;
+  name: string;
+  amount: number;
+  category: ExpenseCategory;
+  month: string;
+  is_paid: boolean;
+  paid_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PaymentPlanDb {
+  id: string;
+  name: string;
+  provider: PaymentPlanProvider;
+  initial_cost: number;
+  total_payments: number;
+  current_payment: number;
+  payment_amount: number;
+  minimum_monthly_payment: number | null;
+  start_date: string;
+  frequency: PaymentFrequency;
+  end_date: string | null;
+  minimum_payment: number | null;
+  is_complete: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 // ============================================================================
 // Mappers (re-used)
 // ============================================================================
-const mapFixedExpense = (d: any): FixedExpense => ({
+const mapFixedExpense = (d: FixedExpenseDb): FixedExpense => ({
   id: d.id,
   name: d.name,
   amount: d.amount,
@@ -20,7 +63,7 @@ const mapFixedExpense = (d: any): FixedExpense => ({
   updatedAt: new Date(d.updated_at).getTime(),
 });
 
-const mapVariableExpense = (d: any): VariableExpense => ({
+const mapVariableExpense = (d: VariableExpenseDb): VariableExpense => ({
   id: d.id,
   name: d.name,
   amount: d.amount,
@@ -32,7 +75,7 @@ const mapVariableExpense = (d: any): VariableExpense => ({
   updatedAt: new Date(d.updated_at).getTime(),
 });
 
-const mapPaymentPlan = (d: any): PaymentPlan => ({
+const mapPaymentPlan = (d: PaymentPlanDb): PaymentPlan => ({
   id: d.id,
   name: d.name,
   provider: d.provider,
@@ -40,28 +83,15 @@ const mapPaymentPlan = (d: any): PaymentPlan => ({
   totalPayments: d.total_payments,
   currentPayment: d.current_payment,
   paymentAmount: d.payment_amount,
-  minimumMonthlyPayment: d.minimum_monthly_payment,
+  minimumMonthlyPayment: d.minimum_monthly_payment ?? undefined,
   startDate: d.start_date,
   frequency: d.frequency,
-  endDate: d.end_date,
-  minimumPayment: d.minimum_payment,
+  endDate: d.end_date ?? undefined,
+  minimumPayment: d.minimum_payment ?? undefined,
   isComplete: d.is_complete,
   createdAt: new Date(d.created_at).getTime(),
   updatedAt: new Date(d.updated_at).getTime(),
 });
-
-const mapPaymentPlanPayment = (d: any): PaymentPlanPayment => ({
-  id: d.id,
-  paymentPlanId: d.payment_plan_id,
-  paymentNumber: d.payment_number,
-  dueDate: d.due_date,
-  isPaid: d.is_paid,
-  paidDate: d.paid_date,
-  month: d.month,
-  createdAt: new Date(d.created_at).getTime(),
-  updatedAt: new Date(d.updated_at).getTime(),
-});
-
 
 // ============================================================================
 // Fixed Expenses API
@@ -85,7 +115,7 @@ export const fixedExpensesApi = {
   },
 
   async updateFixedExpense(id: string, updates: UpdateFixedExpense): Promise<FixedExpense> {
-    const dbUpdates: any = {};
+    const dbUpdates: Partial<FixedExpenseDb> = {};
     if (updates.name) dbUpdates.name = updates.name;
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
@@ -131,7 +161,7 @@ export const variableExpensesApi = {
   },
 
   async updateVariableExpense(id: string, updates: UpdateVariableExpense): Promise<VariableExpense> {
-    const dbUpdates: any = {};
+    const dbUpdates: Partial<VariableExpenseDb> = {};
     if (updates.name) dbUpdates.name = updates.name;
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (updates.category) dbUpdates.category = updates.category;
@@ -181,7 +211,7 @@ export const paymentPlansApi = {
   },
 
   async updatePaymentPlan(id: string, updates: UpdatePaymentPlan): Promise<PaymentPlan> {
-    const dbUpdates: any = {};
+    const dbUpdates: Partial<PaymentPlanDb> = {};
     if (updates.name) dbUpdates.name = updates.name;
     if (updates.provider) dbUpdates.provider = updates.provider;
     if (updates.initialCost !== undefined) dbUpdates.initial_cost = updates.initialCost;
@@ -203,50 +233,6 @@ export const paymentPlansApi = {
 
   async deletePaymentPlan(id: string): Promise<void> {
     const { error } = await supabase.from('payment_plans').delete().eq('id', id);
-    if (error) throw new Error(error.message);
-  },
-};
-
-// ============================================================================
-// Payment Plan Payments API
-// ============================================================================
-export const paymentPlanPaymentsApi = {
-  async getPaymentPlanPayments(): Promise<PaymentPlanPayment[]> { // Changed to fetch all
-    const { data, error } = await supabase.from('payment_plan_payments').select('*').order('payment_number', { ascending: true });
-    if (error) throw new Error(error.message);
-    return data.map(mapPaymentPlanPayment);
-  },
-
-  async createPaymentPlanPayment(entry: CreatePaymentPlanPayment): Promise<PaymentPlanPayment> {
-    const { data, error } = await supabase.from('payment_plan_payments').insert({
-      payment_plan_id: entry.paymentPlanId,
-      payment_number: entry.paymentNumber,
-      due_date: entry.dueDate,
-      is_paid: entry.isPaid,
-      paid_date: entry.paidDate,
-      month: entry.month,
-    }).select().single();
-    if (error) throw new Error(error.message);
-    return mapPaymentPlanPayment(data);
-  },
-
-  async updatePaymentPlanPayment(id: string, updates: UpdatePaymentPlanPayment): Promise<PaymentPlanPayment> {
-    const dbUpdates: any = {};
-    if (updates.paymentPlanId) dbUpdates.payment_plan_id = updates.paymentPlanId;
-    if (updates.paymentNumber !== undefined) dbUpdates.payment_number = updates.paymentNumber;
-    if (updates.dueDate) dbUpdates.due_date = updates.dueDate;
-    if (updates.isPaid !== undefined) dbUpdates.is_paid = updates.isPaid;
-    if (updates.paidDate !== undefined) dbUpdates.paid_date = updates.paidDate;
-    if (updates.month) dbUpdates.month = updates.month;
-
-    const { data, error } = await supabase.from('payment_plan_payments')
-      .update(dbUpdates).eq('id', id).select().single();
-    if (error) throw new Error(error.message);
-    return mapPaymentPlanPayment(data);
-  },
-
-  async deletePaymentPlanPayment(id: string): Promise<void> {
-    const { error } = await supabase.from('payment_plan_payments').delete().eq('id', id);
     if (error) throw new Error(error.message);
   },
 };

@@ -166,10 +166,15 @@ export const updatePaymentPlanSchema = paymentPlanBaseSchema
   .partial();
 
 // ============================================================================
-// Payment Plan Payment Validation
+// Payment Plan Payment Validation (For export/import only)
 // ============================================================================
 
-const paymentPlanPaymentBaseSchema = z.object({
+/**
+ * Validation schema for PaymentPlanPayment
+ * NOTE: This is only used for data export/import validation.
+ * The application does not actively manage individual payments.
+ */
+export const paymentPlanPaymentSchema = z.object({
   id: z.string().min(1, 'ID is required'),
   paymentPlanId: z.string().min(1, 'Payment plan ID is required'),
   paymentNumber: z.number().int().positive('Payment number must be positive'),
@@ -180,45 +185,6 @@ const paymentPlanPaymentBaseSchema = z.object({
   createdAt: z.number().int().positive(),
   updatedAt: z.number().int().positive(),
 });
-
-export const paymentPlanPaymentSchema = paymentPlanPaymentBaseSchema.refine(
-  (data) => {
-    // If isPaid is true, paidDate should be set
-    if (data.isPaid && !data.paidDate) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'Paid date is required when payment is marked as paid',
-    path: ['paidDate'],
-  }
-);
-
-export const createPaymentPlanPaymentSchema = paymentPlanPaymentBaseSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).refine(
-  (data) => {
-    if (data.isPaid && !data.paidDate) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'Paid date is required when payment is marked as paid',
-    path: ['paidDate'],
-  }
-);
-
-export const updatePaymentPlanPaymentSchema = paymentPlanPaymentBaseSchema
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .partial();
 
 // ============================================================================
 // Monthly Expense Summary Validation

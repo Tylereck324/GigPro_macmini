@@ -136,12 +136,13 @@ export type CreatePaymentPlan = Omit<PaymentPlan, 'id' | 'createdAt' | 'updatedA
 export type UpdatePaymentPlan = Partial<Omit<PaymentPlan, 'id' | 'createdAt' | 'updatedAt'>>;
 
 // ============================================================================
-// Payment Plan Payments
+// Payment Plan Payments (Used only for export/import)
 // ============================================================================
 
 /**
  * Individual payment within a payment plan
- * Tracks due date and payment status for each installment
+ * NOTE: This type is only used for data export/import functionality.
+ * The application does not actively manage individual payments.
  */
 export interface PaymentPlanPayment {
   /** Unique identifier */
@@ -162,35 +163,6 @@ export interface PaymentPlanPayment {
   createdAt: number;
   /** Timestamp when record was last updated */
   updatedAt: number;
-}
-
-/**
- * Data required to create a new payment plan payment
- * Omits auto-generated fields (id, timestamps)
- */
-export type CreatePaymentPlanPayment = Omit<PaymentPlanPayment, 'id' | 'createdAt' | 'updatedAt'>;
-
-/**
- * Data for updating an existing payment plan payment
- * All fields optional except id
- */
-export type UpdatePaymentPlanPayment = Partial<Omit<PaymentPlanPayment, 'id' | 'createdAt' | 'updatedAt'>>;
-
-// ============================================================================
-// Composite Types
-// ============================================================================
-
-/**
- * Payment plan with all related payments and computed totals
- * Used for displaying detailed payment plan information
- */
-export interface PaymentPlanWithPayments extends PaymentPlan {
-  /** All payment records for this plan */
-  payments: PaymentPlanPayment[];
-  /** Number of payments remaining */
-  remainingPayments: number;
-  /** Total amount remaining to be paid */
-  remainingAmount: number;
 }
 
 // ============================================================================

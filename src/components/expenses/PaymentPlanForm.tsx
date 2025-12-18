@@ -76,10 +76,15 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
     const now = new Date();
     const endDate = new Date(end);
 
+    // Guard against invalid dates
+    if (isNaN(endDate.getTime())) return 0;
+
     const yearDiff = endDate.getFullYear() - now.getFullYear();
     const monthDiff = endDate.getMonth() - now.getMonth();
+    const months = yearDiff * 12 + monthDiff + 1; // +1 to include the end month
 
-    return yearDiff * 12 + monthDiff + 1; // +1 to include the end month
+    // Return 0 for past dates instead of negative numbers
+    return Math.max(0, months);
   };
 
   /**
@@ -87,9 +92,15 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
    */
   const calculateRecommendedPayment = (): number => {
     if (provider !== 'Other' || !initialCost || !endDate) return 0;
+
+    const cost = parseFloat(initialCost);
+    if (isNaN(cost) || cost <= 0) return 0;
+
     const months = calculateMonthsFromNow(endDate);
     if (months <= 0) return 0;
-    return parseFloat(initialCost) / months;
+
+    const result = cost / months;
+    return isNaN(result) || !isFinite(result) ? 0 : result;
   };
 
   /**
@@ -97,7 +108,15 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
    */
   const calculatePaymentAmount = (): number => {
     if (!initialCost || !totalPayments) return 0;
-    return parseFloat(initialCost) / parseInt(totalPayments, 10);
+
+    const cost = parseFloat(initialCost);
+    const payments = parseInt(totalPayments, 10);
+
+    // Guard against NaN and division by zero
+    if (isNaN(cost) || isNaN(payments) || payments <= 0) return 0;
+
+    const result = cost / payments;
+    return isNaN(result) || !isFinite(result) ? 0 : result;
   };
 
   /**
@@ -112,13 +131,19 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
     const total = parseInt(totalPayments, 10);
     const current = parseInt(currentPayment, 10);
 
+    // Guard against NaN
+    if (isNaN(total) || isNaN(current)) {
+      return { payments: 0, amount: 0 };
+    }
+
     // Remaining = total - current + 1
     // (current payment still needs to be made)
     const remaining = total - current + 1;
+    const amount = remaining * paymentAmount;
 
     return {
-      payments: remaining,
-      amount: remaining * paymentAmount,
+      payments: Math.max(0, remaining),
+      amount: isNaN(amount) || !isFinite(amount) ? 0 : amount,
     };
   };
 
@@ -149,9 +174,10 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
         const minPay = parseFloat(minimumPayment);
         const recommended = calculateRecommendedPayment();
         if (minPay > recommended) {
-          toast.error('Warning: Minimum payment is higher than recommended payment to meet deadline', {
+          toast.error('Minimum payment exceeds recommended amount. You may miss your deadline.', {
             duration: 5000,
           });
+          return false;
         }
       }
     } else {

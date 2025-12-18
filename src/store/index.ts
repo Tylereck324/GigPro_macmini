@@ -45,7 +45,6 @@ export const useExpenseStore = () => useStore((state) => ({
   fixedExpenses: state.fixedExpenses,
   variableExpenses: state.variableExpenses,
   paymentPlans: state.paymentPlans,
-  paymentPlanPayments: state.paymentPlanPayments,
   isLoading: state.expenseLoading,
   error: state.expenseError,
   loadFixedExpenses: state.loadFixedExpenses,
@@ -60,10 +59,6 @@ export const useExpenseStore = () => useStore((state) => ({
   addPaymentPlan: state.addPaymentPlan,
   updatePaymentPlan: state.updatePaymentPlan,
   deletePaymentPlan: state.deletePaymentPlan,
-  loadPaymentPlanPayments: state.loadPaymentPlanPayments,
-  addPaymentPlanPayment: state.addPaymentPlanPayment,
-  updatePaymentPlanPayment: state.updatePaymentPlanPayment,
-  deletePaymentPlanPayment: state.deletePaymentPlanPayment,
   clearError: state.clearExpenseError,
 }));
 

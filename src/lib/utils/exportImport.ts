@@ -70,8 +70,8 @@ export async function exportData(): Promise<void> {
           month: entry.month,
           isPaid: entry.is_paid,
           paidDate: entry.paid_date,
-          createdAt: new Date(entry.createdAt).getTime(),
-          updatedAt: new Date(entry.updatedAt).getTime(),
+          createdAt: new Date(entry.created_at).getTime(),
+          updatedAt: new Date(entry.updated_at).getTime(),
         })),
         paymentPlans: (paymentPlans || []).map((entry: any) => ({
           id: entry.id,

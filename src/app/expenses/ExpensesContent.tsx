@@ -58,7 +58,8 @@ export function ExpensesContent() {
         // Don't close form - allow adding multiple expenses
       }
     } catch (error) {
-      throw error;
+      console.error('Failed to save fixed expense:', error);
+      // Error toast already shown by store or form component
     }
   };
 
@@ -75,7 +76,8 @@ export function ExpensesContent() {
         // Don't close form - allow adding multiple expenses
       }
     } catch (error) {
-      throw error;
+      console.error('Failed to save variable expense:', error);
+      // Error toast already shown by store or form component
     }
   };
 
@@ -92,7 +94,8 @@ export function ExpensesContent() {
         // Don't close form - allow adding multiple payment plans
       }
     } catch (error) {
-      throw error;
+      console.error('Failed to save payment plan:', error);
+      // Error toast already shown by store or form component
     }
   };
 
