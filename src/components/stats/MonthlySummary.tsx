@@ -51,10 +51,10 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       }
     }
 
-    // Single pass: active fixed expenses
+    // Fixed expenses (always show full amount, regardless of active/paid status)
     let totalBills = 0;
     for (const expense of fixedExpenses) {
-      if (expense.isActive) totalBills += expense.amount;
+      totalBills += expense.amount;
     }
 
     // Calculate payment plans minimum due (always show full amount, regardless of paid status)
