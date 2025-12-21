@@ -85,9 +85,8 @@ export function MonthlyExpenseList({
     // Use canonical function from expenseCalculations.ts
     const getRemainingForPlanTotals = (plan: PaymentPlan) => calculatePaymentPlanRemaining(plan);
 
-    const fixedTotal = fixedExpenses
-      .filter((e) => e.isActive)
-      .reduce((sum, e) => sum + e.amount, 0);
+    // All fixed expenses (regardless of isActive - matches calendar summary)
+    const fixedTotal = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
 
     // Calculate payment plan totals
     const activePlans = paymentPlans.filter((p) => !p.isComplete);
