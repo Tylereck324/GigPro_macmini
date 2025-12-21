@@ -149,9 +149,9 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
         </div>
 
         {/* Gas Expenses */}
-        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+        <div className="p-4 bg-danger/10 border border-danger/20 rounded-lg">
           <div className="text-sm text-textSecondary mb-1">Gas Expenses</div>
-          <div className="text-2xl font-bold text-orange-500">
+          <div className="text-2xl font-bold text-danger">
             {formatCurrency(monthlyTotals.totalGasExpenses)}
           </div>
         </div>
@@ -159,8 +159,8 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
         {/* Net */}
         <div
           className={`p-4 rounded-lg border ${monthlyTotals.net >= 0
-              ? 'bg-primary/10 border-primary/20'
-              : 'bg-danger/10 border-danger/20'
+            ? 'bg-primary/10 border-primary/20'
+            : 'bg-danger/10 border-danger/20'
             }`}
         >
           <div className="text-sm text-textSecondary mb-1">Net (After All Expenses)</div>
