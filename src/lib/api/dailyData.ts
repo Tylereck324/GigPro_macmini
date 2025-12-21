@@ -4,6 +4,21 @@ import type { DailyDataRow, DailyDataUpdate } from '@/types/database';
 import { supabase } from '../supabase'; // Use global supabase client
 import { coerceNullableNumber } from './dbCoercion';
 
+/**
+ * Options for fetching daily data with filtering
+ */
+export interface GetDailyDataOptions {
+  /** Date range filter */
+  dateRange?: {
+    /** Start date (inclusive) in YYYY-MM-DD format */
+    start: string;
+    /** End date (inclusive) in YYYY-MM-DD format */
+    end: string;
+  };
+}
+
+const DAILY_DATA_SELECT = 'id, date, mileage, gas_expense, created_at, updated_at';
+
 // Helper function to map snake_case to camelCase
 const mapDailyData = (entry: DailyDataRow): DailyData => ({
   id: entry.id,
@@ -15,11 +30,19 @@ const mapDailyData = (entry: DailyDataRow): DailyData => ({
 });
 
 export const dailyDataApi = {
-  async getAllDailyData(): Promise<DailyData[]> {
-    const { data, error } = await supabase
+  async getAllDailyData(options?: GetDailyDataOptions): Promise<DailyData[]> {
+    let query = supabase
       .from('daily_data')
-      .select('*')
+      .select(DAILY_DATA_SELECT)
       .order('date', { ascending: false });
+
+    if (options?.dateRange) {
+      query = query
+        .gte('date', options.dateRange.start)
+        .lte('date', options.dateRange.end);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
@@ -38,7 +61,7 @@ export const dailyDataApi = {
     const { data: upsertedData, error } = await supabase
       .from('daily_data')
       .upsert(dbUpdates, { onConflict: 'date' })
-      .select()
+      .select(DAILY_DATA_SELECT)
       .single();
 
     if (error) {

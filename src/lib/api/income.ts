@@ -21,6 +21,9 @@ export interface GetIncomeEntriesOptions {
   };
 }
 
+const INCOME_ENTRY_SELECT =
+  'id, date, platform, custom_platform_name, block_start_time, block_end_time, block_length, amount, notes, created_at, updated_at';
+
 // Helper function to map snake_case to camelCase
 const normalizeDate = (dateStr: string | null): string | null => {
   if (!dateStr) return null;
@@ -63,7 +66,7 @@ export const incomeApi = {
         amount: entry.amount,
         notes: entry.notes,
       })
-      .select()
+      .select(INCOME_ENTRY_SELECT)
       .single();
 
     if (error) {
@@ -75,7 +78,7 @@ export const incomeApi = {
   async getIncomeEntries(options?: GetIncomeEntriesOptions): Promise<IncomeEntry[]> {
     let query = supabase
       .from('income_entries')
-      .select('*')
+      .select(INCOME_ENTRY_SELECT)
       .order('date', { ascending: false });
 
     // Apply date range filter if provided
@@ -118,7 +121,7 @@ export const incomeApi = {
       .from('income_entries')
       .update(dbUpdates)
       .eq('id', id)
-      .select()
+      .select(INCOME_ENTRY_SELECT)
       .single();
 
     if (error) {

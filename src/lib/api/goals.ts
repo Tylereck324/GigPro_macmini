@@ -4,6 +4,9 @@ import type { GoalRow, GoalUpdate } from '@/types/database';
 import { supabase } from '../supabase'; // Use global supabase client
 import { coerceInteger, coerceNumber } from './dbCoercion';
 
+const GOAL_SELECT =
+  'id, name, period, target_amount, start_date, end_date, is_active, priority, created_at, updated_at';
+
 // Helper function to map snake_case to camelCase
 const mapGoal = (entry: GoalRow): Goal => ({
   id: entry.id,
@@ -31,7 +34,7 @@ export const goalsApi = {
         is_active: entry.isActive,
         priority: entry.priority,
       })
-      .select()
+      .select(GOAL_SELECT)
       .single();
 
     if (error) {
@@ -43,7 +46,7 @@ export const goalsApi = {
   async getGoals(): Promise<Goal[]> {
     const { data, error } = await supabase
       .from('goals')
-      .select('*')
+      .select(GOAL_SELECT)
       .order('priority', { ascending: true });
 
     if (error) {
@@ -66,7 +69,7 @@ export const goalsApi = {
       .from('goals')
       .update(dbUpdates)
       .eq('id', id)
-      .select()
+      .select(GOAL_SELECT)
       .single();
 
     if (error) {

@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import type { IncomeEntry, CreateIncomeEntry, UpdateIncomeEntry } from '@/types/income';
-import { incomeApi } from '@/lib/api/income'; // Import the new API helper
+import { incomeApi, type GetIncomeEntriesOptions } from '@/lib/api/income'; // Import the new API helper
 import { createIncomeEntrySchema, updateIncomeEntrySchema } from '@/types/validation';
 import { calculateAmazonFlexHours } from '@/lib/utils/amazonFlexHours';
 import {
@@ -8,6 +8,7 @@ import {
   AMAZON_FLEX_WEEKLY_LIMIT_HOURS,
   DEFAULT_TIME_ZONE,
 } from '@/lib/constants/amazonFlex';
+import type { ThemeSlice } from './themeSlice';
 
 export interface IncomeSlice {
   incomeEntries: IncomeEntry[];
@@ -15,7 +16,7 @@ export interface IncomeSlice {
   incomeError: string | null;
 
   // Actions
-  loadIncomeEntries: () => Promise<void>;
+  loadIncomeEntries: (options?: GetIncomeEntriesOptions) => Promise<void>;
   addIncomeEntry: (entry: CreateIncomeEntry) => Promise<IncomeEntry>;
   updateIncomeEntry: (id: string, updates: UpdateIncomeEntry) => Promise<void>;
   deleteIncomeEntry: (id: string) => Promise<void>;
@@ -77,10 +78,10 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   incomeLoading: false,
   incomeError: null,
 
-  loadIncomeEntries: async () => {
+  loadIncomeEntries: async (options?: GetIncomeEntriesOptions) => {
     set({ incomeLoading: true, incomeError: null });
     try {
-      const entries = await incomeApi.getIncomeEntries(); // Use API helper
+      const entries = await incomeApi.getIncomeEntries(options); // Use API helper
       set({ incomeEntries: entries, incomeLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load income entries';
@@ -97,7 +98,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       const validatedEntry = createIncomeEntrySchema.parse(entry);
 
       // Get settings from store (themeSlice has Amazon Flex capacity settings)
-      const store = get() as any; // Cast to access other slices
+      const store = get() as Pick<ThemeSlice, 'amazonFlexDailyCapacity' | 'amazonFlexWeeklyCapacity'>;
       const dailyCapacity =
         store.amazonFlexDailyCapacity ?? AMAZON_FLEX_DAILY_LIMIT_HOURS * 60;
       const weeklyCapacity =
@@ -141,7 +142,7 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       const validatedUpdates = updateIncomeEntrySchema.parse(updates);
 
       // Get settings from store (themeSlice has Amazon Flex capacity settings)
-      const store = get() as any; // Cast to access other slices
+      const store = get() as Pick<ThemeSlice, 'amazonFlexDailyCapacity' | 'amazonFlexWeeklyCapacity'>;
       const dailyCapacity =
         store.amazonFlexDailyCapacity ?? AMAZON_FLEX_DAILY_LIMIT_HOURS * 60;
       const weeklyCapacity =

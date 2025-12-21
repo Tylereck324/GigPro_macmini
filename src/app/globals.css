@@ -28,10 +28,6 @@
     white-space: normal;
   }
 
-  /* Subtle hover scale for calendar cells */
-  .hover\:scale-102:hover {
-    transform: scale(1.02);
-  }
 }
 
 :root {
@@ -546,83 +542,4 @@ img, video, iframe {
 /* Fallback for images without dimensions */
 img:not([width]):not([height]) {
   aspect-ratio: auto;
-}
-
-/* Skeleton loader with aspect ratio */
-.skeleton-loader {
-  aspect-ratio: 16 / 9;
-  background: linear-gradient(
-    90deg,
-    var(--color-surface) 25%,
-    var(--color-surface-hover) 50%,
-    var(--color-surface) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Scroll-driven animations - Hardware-accelerated, runs on compositor thread */
-@supports (animation-timeline: view()) {
-  .fade-in-on-scroll {
-    animation: fade-in-up linear;
-    animation-timeline: view();
-    animation-range: entry 0% cover 40%;
-  }
-
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Scroll progress indicator */
-  .scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--gradient-primary);
-    transform-origin: left;
-    animation: scroll-progress linear;
-    animation-timeline: scroll(root);
-    z-index: 100;
-  }
-
-  @keyframes scroll-progress {
-    from {
-      transform: scaleX(0);
-    }
-    to {
-      transform: scaleX(1);
-    }
-  }
-}
-
-/* Container queries for component-based responsive design */
-@supports (container-type: inline-size) {
-  .card-container {
-    container-type: inline-size;
-    container-name: card;
-  }
-
-  @container card (min-width: 400px) {
-    .card-content {
-      display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 1rem;
-    }
-  }
-
-  @container card (max-width: 399px) {
-    .card-content {
-      display: flex;
-      flex-direction: column;
-    }
-  }
 }

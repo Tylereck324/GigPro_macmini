@@ -57,26 +57,52 @@ export async function exportData(): Promise<void> {
       settingsResult,
     ] = results;
 
-    // Check for failures and collect error messages
+    // Check for failures and collect error messages (including fulfilled responses with Supabase error)
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         failures.push(`${tables[index]}: ${result.reason}`);
         console.error(`Failed to fetch ${tables[index]}:`, result.reason);
+        return;
+      }
+      if (result.value.error) {
+        failures.push(`${tables[index]}: ${result.value.error.message}`);
+        console.error(`Failed to fetch ${tables[index]}:`, result.value.error);
       }
     });
 
+    const incomeFailed =
+      incomeResult.status === 'rejected' ||
+      (incomeResult.status === 'fulfilled' && incomeResult.value.error);
+    const dailyDataFailed =
+      dailyDataResult.status === 'rejected' ||
+      (dailyDataResult.status === 'fulfilled' && dailyDataResult.value.error);
+
     // If critical tables failed, throw error
-    if (incomeResult.status === 'rejected' || dailyDataResult.status === 'rejected') {
+    if (incomeFailed || dailyDataFailed) {
       throw new Error(`Failed to export critical data: ${failures.join(', ')}`);
     }
 
     // Extract data with fallback to empty arrays
-    const incomeEntries = incomeResult.status === 'fulfilled' ? incomeResult.value.data : [];
-    const dailyData = dailyDataResult.status === 'fulfilled' ? dailyDataResult.value.data : [];
-    const fixedExpenses = fixedExpensesResult.status === 'fulfilled' ? fixedExpensesResult.value.data : [];
-    const paymentPlans = paymentPlansResult.status === 'fulfilled' ? paymentPlansResult.value.data : [];
-    const paymentPlanPayments = paymentPlanPaymentsResult.status === 'fulfilled' ? paymentPlanPaymentsResult.value.data : [];
-    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value.data : null;
+    const incomeEntries =
+      incomeResult.status === 'fulfilled' && !incomeResult.value.error ? incomeResult.value.data : [];
+    const dailyData =
+      dailyDataResult.status === 'fulfilled' && !dailyDataResult.value.error ? dailyDataResult.value.data : [];
+    const fixedExpenses =
+      fixedExpensesResult.status === 'fulfilled' && !fixedExpensesResult.value.error
+        ? fixedExpensesResult.value.data
+        : [];
+    const paymentPlans =
+      paymentPlansResult.status === 'fulfilled' && !paymentPlansResult.value.error
+        ? paymentPlansResult.value.data
+        : [];
+    const paymentPlanPayments =
+      paymentPlanPaymentsResult.status === 'fulfilled' && !paymentPlanPaymentsResult.value.error
+        ? paymentPlanPaymentsResult.value.data
+        : [];
+    const settings =
+      settingsResult.status === 'fulfilled' && !settingsResult.value.error
+        ? settingsResult.value.data
+        : null;
 
     // Map data from snake_case to camelCase
     const exportData: ExportData = {
@@ -331,9 +357,24 @@ export async function importData(file: File): Promise<void> {
     // Import settings
     if (imported.data.settings) {
       // For single-user, we expect one settings entry with id 'settings'
+      const settings = imported.data.settings;
       const { error: upsertError } = await supabase
         .from('app_settings')
-        .upsert({ ...imported.data.settings, id: 'settings' }, { onConflict: 'id' });
+        .upsert(
+          {
+            id: 'settings',
+            theme: settings.theme,
+            last_export_date: settings.lastExportDate
+              ? new Date(settings.lastExportDate).toISOString()
+              : null,
+            last_import_date: settings.lastImportDate
+              ? new Date(settings.lastImportDate).toISOString()
+              : null,
+            amazon_flex_daily_capacity: settings.amazonFlexDailyCapacity,
+            amazon_flex_weekly_capacity: settings.amazonFlexWeeklyCapacity,
+          },
+          { onConflict: 'id' }
+        );
       if (upsertError) throw new Error(`Failed to import settings: ${upsertError.message}`);
     }
 

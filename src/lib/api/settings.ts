@@ -2,6 +2,9 @@
 import type { AppSettings, UpdateAppSettings } from '@/types/settings';
 import { supabase } from '../supabase'; // Use global supabase client
 
+const SETTINGS_SELECT =
+  'id, theme, last_export_date, last_import_date, amazon_flex_daily_capacity, amazon_flex_weekly_capacity, updated_at';
+
 export const settingsApi = {
   async getSettings(): Promise<AppSettings> {
     const SETTINGS_ID = 'settings';
@@ -9,7 +12,7 @@ export const settingsApi = {
     // Try to find settings by the fixed ID
     let { data, error } = await supabase
       .from('app_settings')
-      .select('*')
+      .select(SETTINGS_SELECT)
       .eq('id', SETTINGS_ID)
       .maybeSingle();
 
@@ -29,7 +32,7 @@ export const settingsApi = {
           amazon_flex_daily_capacity: 480,
           amazon_flex_weekly_capacity: 2400
         })
-        .select()
+        .select(SETTINGS_SELECT)
         .maybeSingle();
 
       if (insertError) {
@@ -72,7 +75,7 @@ export const settingsApi = {
       .from('app_settings')
       .update(dbUpdates)
       .eq('id', SETTINGS_ID)
-      .select()
+      .select(SETTINGS_SELECT)
       .single();
 
     if (error) {

@@ -90,16 +90,25 @@ export function GoalsContent() {
   };
 
   const confirmDelete = async () => {
-    if (deleteId) {
+    if (!deleteId) return;
+    try {
       await deleteGoal(deleteId);
       toast.success('Goal deleted');
       setDeleteId(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete goal';
+      toast.error(message);
     }
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
-    await updateGoal(id, { isActive });
-    toast.success(isActive ? 'Goal activated' : 'Goal deactivated');
+    try {
+      await updateGoal(id, { isActive });
+      toast.success(isActive ? 'Goal activated' : 'Goal deactivated');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update goal';
+      toast.error(message);
+    }
   };
 
   const handleCancelForm = () => {

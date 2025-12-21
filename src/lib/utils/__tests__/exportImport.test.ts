@@ -153,12 +153,27 @@ describe('exportImport', () => {
     });
 
     it('should handle export errors', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'Database error' },
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'app_settings') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { message: 'Database error' },
+                }),
+              })),
+            })),
+          } as any;
+        }
+
+        return {
+          select: vi.fn().mockResolvedValue({
+            data: null,
+            error: { message: 'Database error' },
+          }),
+        } as any;
+      });
 
       await expect(exportData()).rejects.toThrow('Failed to export data');
     });
@@ -176,7 +191,11 @@ describe('exportImport', () => {
                   id: '1',
                   date: '2025-12-01',
                   platform: 'AmazonFlex',
+                  blockStartTime: '2025-12-01T10:00:00.000Z',
+                  blockEndTime: '2025-12-01T14:00:00.000Z',
+                  blockLength: 240,
                   amount: 100,
+                  notes: '',
                   createdAt: Date.now(),
                   updatedAt: Date.now(),
                 },
@@ -240,9 +259,43 @@ describe('exportImport', () => {
 	    });
 
     it('should reject unsupported export version', async () => {
-      const mockFile = createMockFile(JSON.stringify({ version: '2.0', data: {} }));
+      const mockFile = createMockFile(
+        JSON.stringify({
+          version: '2.0',
+          exportDate: '2025-12-01T00:00:00Z',
+          data: {
+            incomeEntries: [
+              {
+                id: '1',
+                date: '2025-12-01',
+                platform: 'AmazonFlex',
+                blockStartTime: '2025-12-01T10:00:00.000Z',
+                blockEndTime: '2025-12-01T14:00:00.000Z',
+                blockLength: 240,
+                amount: 100,
+                notes: '',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              },
+            ],
+            dailyData: [],
+            fixedExpenses: [],
+            paymentPlans: [],
+            paymentPlanPayments: [],
+            settings: {
+              id: 'settings',
+              theme: 'light',
+              lastExportDate: null,
+              lastImportDate: null,
+              amazonFlexDailyCapacity: 480,
+              amazonFlexWeeklyCapacity: 2400,
+              updatedAt: Date.now(),
+            },
+          },
+        }),
+      );
       await expect(importData(mockFile)).rejects.toThrow(
-        'Unsupported export version: 2.0'
+        'Invalid export file format: version: Invalid literal value'
       );
     });
 
@@ -259,12 +312,33 @@ describe('exportImport', () => {
             version: '1.0',
             exportDate: '2025-12-01T00:00:00Z',
 	            data: {
-	              incomeEntries: [{ id: '1', date: '2025-12-01', amount: 100, createdAt: Date.now(), updatedAt: Date.now() }],
+	              incomeEntries: [
+                  {
+                    id: '1',
+                    date: '2025-12-01',
+                    platform: 'AmazonFlex',
+                    blockStartTime: '2025-12-01T10:00:00.000Z',
+                    blockEndTime: '2025-12-01T14:00:00.000Z',
+                    blockLength: 240,
+                    amount: 100,
+                    notes: '',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                  },
+                ],
 	              dailyData: [],
 	              fixedExpenses: [],
 	              paymentPlans: [],
 	              paymentPlanPayments: [],
-	              settings: null,
+	              settings: {
+                  id: 'settings',
+                  theme: 'light',
+                  lastExportDate: null,
+                  lastImportDate: null,
+                  amazonFlexDailyCapacity: 480,
+                  amazonFlexWeeklyCapacity: 2400,
+                  updatedAt: Date.now(),
+                },
 	            },
           }),
       );
@@ -300,7 +374,15 @@ describe('exportImport', () => {
 	              fixedExpenses: [],
 	              paymentPlans: [],
 	              paymentPlanPayments: [],
-	              settings: null,
+	              settings: {
+                  id: 'settings',
+                  theme: 'light',
+                  lastExportDate: null,
+                  lastImportDate: null,
+                  amazonFlexDailyCapacity: 480,
+                  amazonFlexWeeklyCapacity: 2400,
+                  updatedAt: Date.now(),
+                },
 	            },
           }),
       );

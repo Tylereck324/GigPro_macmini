@@ -15,6 +15,11 @@ import { coerceInteger, coerceNumber } from './dbCoercion';
 // ============================================================================
 // Mappers (re-used)
 // ============================================================================
+const FIXED_EXPENSE_SELECT = 'id, name, amount, due_date, is_active, created_at, updated_at';
+const PAYMENT_PLAN_SELECT =
+  'id, name, provider, initial_cost, total_payments, current_payment, payment_amount, minimum_monthly_payment, due_day, start_date, frequency, end_date, minimum_payment, is_complete, created_at, updated_at';
+const PAYMENT_PLAN_PAYMENT_SELECT =
+  'id, payment_plan_id, payment_number, due_date, is_paid, paid_date, month, created_at, updated_at';
 const mapFixedExpense = (d: FixedExpenseRow): FixedExpense => ({
   id: d.id,
   name: d.name,
@@ -68,7 +73,7 @@ const mapPaymentPlanPayment = (d: PaymentPlanPaymentRow): PaymentPlanPayment => 
 // ============================================================================
 export const fixedExpensesApi = {
   async getFixedExpenses(): Promise<FixedExpense[]> {
-    const { data, error } = await supabase.from('fixed_expenses').select('*');
+    const { data, error } = await supabase.from('fixed_expenses').select(FIXED_EXPENSE_SELECT);
     if (error) throw new Error(error.message);
     return data.map(mapFixedExpense);
   },
@@ -79,7 +84,7 @@ export const fixedExpensesApi = {
       amount: entry.amount,
       due_date: entry.dueDate,
       is_active: entry.isActive,
-    }).select().single();
+    }).select(FIXED_EXPENSE_SELECT).single();
     if (error) throw new Error(error.message);
     return mapFixedExpense(data);
   },
@@ -92,7 +97,7 @@ export const fixedExpensesApi = {
     if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
 
     const { data, error } = await supabase.from('fixed_expenses')
-      .update(dbUpdates).eq('id', id).select().single();
+      .update(dbUpdates).eq('id', id).select(FIXED_EXPENSE_SELECT).single();
     if (error) throw new Error(error.message);
     return mapFixedExpense(data);
   },
@@ -108,7 +113,7 @@ export const fixedExpensesApi = {
 // ============================================================================
 export const paymentPlansApi = {
   async getPaymentPlans(): Promise<PaymentPlan[]> {
-    const { data, error } = await supabase.from('payment_plans').select('*');
+    const { data, error } = await supabase.from('payment_plans').select(PAYMENT_PLAN_SELECT);
     if (error) throw new Error(error.message);
     return data.map(mapPaymentPlan);
   },
@@ -128,7 +133,7 @@ export const paymentPlansApi = {
       end_date: entry.endDate,
       minimum_payment: entry.minimumPayment,
       is_complete: entry.isComplete,
-    }).select().single();
+    }).select(PAYMENT_PLAN_SELECT).single();
     if (error) throw new Error(error.message);
     return mapPaymentPlan(data);
   },
@@ -150,7 +155,7 @@ export const paymentPlansApi = {
     if (updates.isComplete !== undefined) dbUpdates.is_complete = updates.isComplete;
 
     const { data, error } = await supabase.from('payment_plans')
-      .update(dbUpdates).eq('id', id).select().single();
+      .update(dbUpdates).eq('id', id).select(PAYMENT_PLAN_SELECT).single();
     if (error) throw new Error(error.message);
     return mapPaymentPlan(data);
   },
@@ -166,7 +171,10 @@ export const paymentPlansApi = {
 // ============================================================================
 export const paymentPlanPaymentsApi = {
   async getPaymentPlanPayments(): Promise<PaymentPlanPayment[]> { // Changed to fetch all
-    const { data, error } = await supabase.from('payment_plan_payments').select('*').order('payment_number', { ascending: true });
+    const { data, error } = await supabase
+      .from('payment_plan_payments')
+      .select(PAYMENT_PLAN_PAYMENT_SELECT)
+      .order('payment_number', { ascending: true });
     if (error) throw new Error(error.message);
     return data.map(mapPaymentPlanPayment);
   },
@@ -179,7 +187,7 @@ export const paymentPlanPaymentsApi = {
       is_paid: entry.isPaid,
       paid_date: entry.paidDate,
       month: entry.month,
-    }).select().single();
+    }).select(PAYMENT_PLAN_PAYMENT_SELECT).single();
     if (error) throw new Error(error.message);
     return mapPaymentPlanPayment(data);
   },
@@ -194,7 +202,7 @@ export const paymentPlanPaymentsApi = {
     if (updates.month !== undefined) dbUpdates.month = updates.month;
 
     const { data, error } = await supabase.from('payment_plan_payments')
-      .update(dbUpdates).eq('id', id).select().single();
+      .update(dbUpdates).eq('id', id).select(PAYMENT_PLAN_PAYMENT_SELECT).single();
     if (error) throw new Error(error.message);
     return mapPaymentPlanPayment(data);
   },

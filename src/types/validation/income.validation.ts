@@ -64,7 +64,10 @@ export const incomeEntrySchema = incomeEntryBaseSchema
     (data) => {
       // If blockStartTime and blockEndTime are provided, validate they make sense
       if (data.blockStartTime && data.blockEndTime) {
-        return new Date(data.blockStartTime) <= new Date(data.blockEndTime);
+        const start = new Date(data.blockStartTime);
+        const end = new Date(data.blockEndTime);
+        const effectiveEnd = end < start ? new Date(end.getTime() + 24 * 60 * 60 * 1000) : end;
+        return start <= effectiveEnd;
       }
       return true;
     },
@@ -108,7 +111,10 @@ export const createIncomeEntrySchema = incomeEntryBaseSchema
   .refine(
     (data) => {
       if (data.blockStartTime && data.blockEndTime) {
-        return new Date(data.blockStartTime) <= new Date(data.blockEndTime);
+        const start = new Date(data.blockStartTime);
+        const end = new Date(data.blockEndTime);
+        const effectiveEnd = end < start ? new Date(end.getTime() + 24 * 60 * 60 * 1000) : end;
+        return start <= effectiveEnd;
       }
       return true;
     },

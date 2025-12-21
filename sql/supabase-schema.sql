@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS income_entries (
 CREATE INDEX IF NOT EXISTS idx_income_entries_date ON income_entries(date);
 CREATE INDEX IF NOT EXISTS idx_income_entries_platform ON income_entries(platform);
 CREATE INDEX IF NOT EXISTS idx_income_entries_created_at ON income_entries(created_at);
+CREATE INDEX IF NOT EXISTS idx_income_entries_date_platform ON income_entries(date DESC, platform);
 
 -- ============================================================================
 -- 2. APP SETTINGS TABLE (Singleton)
@@ -94,6 +95,9 @@ CREATE TABLE IF NOT EXISTS fixed_expenses (
 
 -- Index for fixed_expenses
 CREATE INDEX IF NOT EXISTS idx_fixed_expenses_is_active ON fixed_expenses(is_active);
+CREATE INDEX IF NOT EXISTS idx_fixed_expenses_active_due
+  ON fixed_expenses (is_active, due_date)
+  WHERE is_active = true;
 
 -- ============================================================================
 -- 7. PAYMENT PLANS TABLE
@@ -139,6 +143,8 @@ CREATE TABLE IF NOT EXISTS payment_plan_payments (
 CREATE INDEX IF NOT EXISTS idx_payment_plan_payments_plan_id ON payment_plan_payments(payment_plan_id);
 CREATE INDEX IF NOT EXISTS idx_payment_plan_payments_month ON payment_plan_payments(month);
 CREATE INDEX IF NOT EXISTS idx_payment_plan_payments_is_paid ON payment_plan_payments(is_paid);
+CREATE INDEX IF NOT EXISTS idx_payment_plan_payments_plan_due
+  ON payment_plan_payments (payment_plan_id, due_date);
 
 -- ============================================================================
 -- FUNCTIONS: Auto-update updated_at timestamp

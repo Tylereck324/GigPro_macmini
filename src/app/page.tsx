@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useShallow } from 'zustand/react/shallow';
 import { MonthlyCalendar } from '@/components/calendar/MonthlyCalendar';
 import { MonthlySummary } from '@/components/stats/MonthlySummary';
@@ -30,13 +31,16 @@ export default function Home() {
     }))
   );
 
-  const loadAllData = useCallback(async () => {
+  const loadAllData = useCallback(async (date: Date) => {
     setIsLoading(true);
     try {
+      const monthStart = format(startOfMonth(date), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(date), 'yyyy-MM-dd');
+
       // Load all data in parallel
       await Promise.all([
-        loadIncomeEntries(),
-        loadDailyData(),
+        loadIncomeEntries({ dateRange: { start: monthStart, end: monthEnd } }),
+        loadDailyData({ dateRange: { start: monthStart, end: monthEnd } }),
         loadFixedExpenses(),
         loadPaymentPlans(),
         loadPaymentPlanPayments(),
@@ -57,8 +61,8 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    loadAllData();
-  }, [loadAllData]);
+    void loadAllData(currentDate);
+  }, [currentDate, loadAllData]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">

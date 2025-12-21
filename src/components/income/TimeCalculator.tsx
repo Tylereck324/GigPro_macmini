@@ -12,7 +12,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, parseISO, parse, differenceInMinutes } from 'date-fns';
+import { format, parseISO, parse, differenceInMinutes, addDays } from 'date-fns';
 import { Input } from '../ui';
 import { formatDuration } from '@/lib/utils/timeCalculations';
 
@@ -193,7 +193,21 @@ export function TimeCalculator({ date, value, onChange }: TimeCalculatorProps) {
     // Recalculate duration if both times are now valid
     let newBlockLength: number | null = null;
     if (newBlockStartTime && newBlockEndTime) {
-      newBlockLength = calculateDuration(newBlockStartTime, newBlockEndTime);
+      try {
+        const start = parseISO(newBlockStartTime);
+        const end = parseISO(newBlockEndTime);
+        let diff = differenceInMinutes(end, start);
+
+        if (diff < 0) {
+          diff += 24 * 60;
+          const correctedEnd = addDays(end, 1);
+          newBlockEndTime = correctedEnd.toISOString();
+        }
+
+        newBlockLength = diff;
+      } catch {
+        newBlockLength = calculateDuration(newBlockStartTime, newBlockEndTime);
+      }
     }
 
     onChange({

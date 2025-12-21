@@ -37,9 +37,13 @@ export function DayContent({ date }: DayContentProps) {
 
   // Load data on mount
   useEffect(() => {
-    void loadIncomeEntries().catch(() => {});
-    void loadDailyData().catch(() => {});
-  }, [loadIncomeEntries, loadDailyData]);
+    const targetDate = parseISO(date);
+    const rangeStart = format(subDays(targetDate, 6), 'yyyy-MM-dd');
+    const rangeEnd = format(targetDate, 'yyyy-MM-dd');
+
+    void loadIncomeEntries({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});
+    void loadDailyData({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});
+  }, [date, loadIncomeEntries, loadDailyData]);
 
   // Get entries for this day
   const dayEntries = useMemo(() => {
@@ -88,8 +92,13 @@ export function DayContent({ date }: DayContentProps) {
   };
 
   const handleDeleteIncome = async (id: string) => {
-    await deleteIncomeEntry(id);
-    toast.success('Income entry deleted');
+    try {
+      await deleteIncomeEntry(id);
+      toast.success('Income entry deleted');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete income entry';
+      toast.error(message);
+    }
   };
 
   const handleSaveExpenses = async (data: { mileage: number | null; gasExpense: number | null }) => {

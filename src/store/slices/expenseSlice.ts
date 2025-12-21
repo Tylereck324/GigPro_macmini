@@ -48,9 +48,6 @@ export interface ExpenseSlice {
   addPaymentPlanPayment: (payment: CreatePaymentPlanPayment) => Promise<PaymentPlanPayment>;
   updatePaymentPlanPayment: (id: string, updates: UpdatePaymentPlanPayment) => Promise<void>;
   deletePaymentPlanPayment: (id: string) => Promise<void>;
-
-  // Combined loader for all expense data (more efficient)
-  loadAllExpenseData: () => Promise<void>;
 }
 
 export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
@@ -311,32 +308,6 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
           paymentPlanPayments: [...state.paymentPlanPayments, original],
         }));
       }
-      throw error;
-    }
-  },
-
-  // Combined loader - fetches all expense data in parallel for better performance
-  loadAllExpenseData: async () => {
-    set({ expenseLoading: true, expenseError: null });
-    try {
-      // Fetch all three data sources in parallel
-      const [expenses, plans, payments] = await Promise.all([
-        fixedExpensesApi.getFixedExpenses(),
-        paymentPlansApi.getPaymentPlans(),
-        paymentPlanPaymentsApi.getPaymentPlanPayments(),
-      ]);
-
-      // Update all state at once
-      set({
-        fixedExpenses: expenses,
-        paymentPlans: plans,
-        paymentPlanPayments: payments,
-        expenseLoading: false,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load expense data';
-      console.error('Failed to load expense data:', error);
-      set({ expenseLoading: false, expenseError: errorMessage });
       throw error;
     }
   },

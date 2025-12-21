@@ -33,8 +33,8 @@ export function DailyExpenses({ date, initialData, onSave }: DailyExpensesProps)
     setIsSubmitting(true);
     try {
       await onSave({
-        mileage: mileage ? parseFloat(mileage) : null,
-        gasExpense: gasExpense ? parseFloat(gasExpense) : null,
+        mileage: mileage !== '' ? parseFloat(mileage) : null,
+        gasExpense: gasExpense !== '' ? parseFloat(gasExpense) : null,
       });
       setHasChanges(false);
     } catch (error) {

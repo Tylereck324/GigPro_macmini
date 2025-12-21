@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import type { DailyData, UpdateDailyData } from '@/types/dailyData';
-import { dailyDataApi } from '@/lib/api/dailyData';
+import { dailyDataApi, type GetDailyDataOptions } from '@/lib/api/dailyData';
 import { updateDailyDataSchema } from '@/types/validation';
 
 export interface DailyDataSlice {
@@ -9,7 +9,7 @@ export interface DailyDataSlice {
   dailyDataError: string | null;
 
   // Actions
-  loadDailyData: () => Promise<void>;
+  loadDailyData: (options?: GetDailyDataOptions) => Promise<void>;
   updateDailyData: (date: string, data: Partial<UpdateDailyData>) => Promise<void>;
 }
 
@@ -18,10 +18,10 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
   dailyDataLoading: false,
   dailyDataError: null,
 
-  loadDailyData: async () => {
+  loadDailyData: async (options?: GetDailyDataOptions) => {
     set({ dailyDataLoading: true, dailyDataError: null });
     try {
-      const dataArray = await dailyDataApi.getAllDailyData();
+      const dataArray = await dailyDataApi.getAllDailyData(options);
       const dataMap = dataArray.reduce((acc, item) => {
         acc[item.date] = item;
         return acc;
