@@ -86,10 +86,8 @@ export function calculateMonthlyNetProfit(
   paymentPlansMinimumDue: number;
   totalGasExpenses: number;
 } {
-  // Sum active fixed expenses
-  const totalBills = fixedExpenses
-    .filter((e) => e.isActive)
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  // Sum ALL fixed expenses (regardless of isActive status - calendar shows full obligations)
+  const totalBills = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Sum payment plan minimum due (only incomplete plans)
   const paymentPlansMinimumDue = paymentPlans
