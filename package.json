@@ -1,0 +1,51 @@
+{
+  "name": "gigpro",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "analyze": "ANALYZE=true next build",
+    "start": "next start",
+    "lint": "next lint",
+    "audit:orphans": "node scripts/audit-orphans.cjs",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "vitest run && playwright test"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.86.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-hot-toast": "^2.4.1",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.5.0",
+    "zod": "^3.23.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.0",
+    "@playwright/test": "^1.57.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/ui": "^4.0.15",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "jsdom": "^27.2.0",
+    "postcss": "^8.4.49",
+    "vitest": "^4.0.15"
+  }
+}

@@ -1,0 +1,628 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* Screen reader only - hide visually but accessible to screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Screen reader only - focusable variant */
+  .sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  /* Subtle hover scale for calendar cells */
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+}
+
+:root {
+  /* Light theme colors - Bright, clean palette with high contrast */
+  --color-primary: #2563EB;
+  --color-primary-light: #60A5FA;
+  --color-primary-dark: #1E40AF;
+  /* Modern Teal instead of Purple */
+  --color-secondary: #0D9488;
+  --color-secondary-light: #5EEAD4;
+  --color-success: #059669;
+  --color-success-light: #10B981;
+  --color-danger: #DC2626;
+  --color-danger-light: #EF4444;
+  --color-warning: #D97706;
+  --color-warning-light: #F59E0B;
+  --color-background: #F0F4F8; /* Slightly off-white for depth */
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F8FAFC;
+  --color-text: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-border: #E2E8F0;
+  --color-amazon-flex: #FF9900;
+  --color-doordash: #FF3008;
+  --color-walmart-spark: #0071CE;
+
+  /* Shadows - Softer and more diffused */
+  --shadow-sm: 0 2px 4px rgba(148, 163, 184, 0.1);
+  --shadow-md: 0 4px 8px -2px rgba(148, 163, 184, 0.15);
+  --shadow-lg: 0 12px 20px -4px rgba(148, 163, 184, 0.15);
+  --shadow-xl: 0 25px 30px -5px rgba(148, 163, 184, 0.15);
+  --shadow-2xl: 0 35px 60px -15px rgba(148, 163, 184, 0.2);
+
+  /* Gradients - Modern Blue to Teal */
+  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #0D9488 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #34D399 100%);
+  --gradient-danger: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  --gradient-surface: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+
+  /* Responsive Typography - Mobile-first with clamp() */
+  --font-size-xs: clamp(0.75rem, 2vw, 0.875rem);
+  --font-size-sm: clamp(0.875rem, 2.5vw, 1rem);
+  --font-size-base: clamp(1rem, 2.5vw, 1.125rem);
+  --font-size-lg: clamp(1.125rem, 3vw, 1.25rem);
+  --font-size-xl: clamp(1.25rem, 3.5vw, 1.5rem);
+  --font-size-2xl: clamp(1.5rem, 4vw, 2rem);
+  --font-size-3xl: clamp(2rem, 5vw, 3rem);
+
+  /* Responsive Spacing - Mobile-first */
+  --spacing-xs: clamp(0.25rem, 1vw, 0.5rem);
+  --spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem);
+  --spacing-md: clamp(0.75rem, 2vw, 1rem);
+  --spacing-lg: clamp(1rem, 2.5vw, 1.5rem);
+  --spacing-xl: clamp(1.5rem, 3vw, 2rem);
+  --spacing-2xl: clamp(2rem, 4vw, 3rem);
+
+  /* Container widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+}
+
+.dark {
+  /* Dark theme colors - Deep, rich dark palette with vibrant accents */
+  --color-primary: #60A5FA;
+  --color-primary-light: #93C5FD;
+  --color-primary-dark: #3B82F6;
+  /* Vibrant Teal for Dark Mode */
+  --color-secondary: #2DD4BF;
+  --color-secondary-light: #99F6E4;
+  --color-success: #34D399;
+  --color-success-light: #6EE7B7;
+  --color-danger: #F87171;
+  --color-danger-light: #FCA5A5;
+  --color-warning: #FBBF24;
+  --color-warning-light: #FCD34D;
+  --color-background: #0F172A; /* Slate 900 - slightly lighter than pure black */
+  --color-surface: #1E293B; /* Slate 800 */
+  --color-surface-hover: #334155; /* Slate 700 */
+  --color-text: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-border: #334155;
+  --color-amazon-flex: #FFB84D;
+  --color-doordash: #FF5733;
+  --color-walmart-spark: #4A9EDB;
+
+  /* Dark mode shadows - more subtle */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+
+  /* Dark gradients - Blue to Teal */
+  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  --gradient-danger: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  --gradient-surface: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--color-text);
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--color-background) 0%,
+    var(--color-surface-hover) 100%
+  );
+  background-attachment: fixed; /* Keep gradient fixed during scroll */
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  font-size: 100%; /* Respects user's browser settings */
+}
+
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessibility: High contrast mode support */
+@media (forced-colors: active) {
+  * {
+    forced-color-adjust: auto;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-hover) 50%,
+    var(--color-surface) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Custom scrollbar - Modern CSS nesting */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+
+  &-track {
+    background: var(--color-background);
+  }
+
+  &-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--color-text-secondary);
+    }
+  }
+}
+
+/* Accessibility: Focus indicators for keyboard navigation (WCAG 2.4.13 Level AAA) */
+/* Using modern CSS nesting for better organization */
+/* Two-color focus indicator ensures 3:1 contrast ratio against any background */
+a, button, input, textarea, select, [tabindex] {
+  &:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-primary);
+    border-radius: 4px;
+  }
+
+  /* Remove default focus for mouse users */
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Enhanced focus for interactive elements */
+.focus-ring {
+  &:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px var(--color-primary);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  a, button, input, textarea, select {
+    border-width: 2px;
+
+    &:focus-visible {
+      outline: 3px solid currentColor;
+      outline-offset: 3px;
+    }
+
+    &:hover {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* Touch target sizing - WCAG 2.2 (minimum 44x44px) */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for inline text links */
+a:not([class]) {
+  min-height: auto;
+  min-width: auto;
+}
+
+/* Ensure text inputs have adequate touch targets */
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+textarea,
+select {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+}
+
+/* Responsive images - prevent layout shift */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Aspect ratio containers for images - Modern CSS nesting */
+.image-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+
+  & img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Modern CSS Grid Utilities */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Flexbox Utilities */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Modern :has() Selector - Conditional Parent Styling */
+/* Style cards differently when they contain images */
+.card:has(img) {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+}
+
+/* Highlight form when it has invalid inputs */
+form:has(input:invalid) {
+  border-color: var(--color-danger);
+}
+
+/* Style container when child element is focused */
+.input-group:has(input:focus, textarea:focus) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+}
+
+/* Empty state handling */
+.list-container:not(:has(li)) {
+  &::after {
+    content: "No items to display";
+    display: block;
+    padding: 2rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+}
+
+/* Adjust grid when sidebar is present */
+.layout-container:has(.sidebar) {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile-first breakpoint utilities - using Tailwind's approach */
+/* Base styles are mobile-first, then progressively enhanced */
+
+/* Container Query Support - Modern CSS Standard */
+.container-query {
+  container-type: inline-size;
+  container-name: card;
+}
+
+.container-query-size {
+  container-type: size;
+  container-name: box;
+}
+
+/* Container Query Responsive Patterns */
+/* Small container: stack content vertically */
+@container card (max-width: 300px) {
+  .cq-flex-layout {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .cq-text-responsive {
+    font-size: 0.875rem;
+  }
+
+  .cq-padding-responsive {
+    padding: 0.75rem;
+  }
+}
+
+/* Medium container: horizontal layout with compact spacing */
+@container card (min-width: 301px) and (max-width: 500px) {
+  .cq-flex-layout {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .cq-text-responsive {
+    font-size: 1rem;
+  }
+
+  .cq-padding-responsive {
+    padding: 1rem;
+  }
+}
+
+/* Large container: full horizontal layout with generous spacing */
+@container card (min-width: 501px) {
+  .cq-flex-layout {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .cq-text-responsive {
+    font-size: 1.125rem;
+  }
+
+  .cq-padding-responsive {
+    padding: 1.5rem;
+  }
+
+  .cq-grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Responsive utility classes */
+@media (min-width: 640px) {
+  .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .md\:flex-row {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .lg\:max-w-container {
+    max-width: var(--container-lg);
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .xl\:max-w-container {
+    max-width: var(--container-xl);
+  }
+}
+
+/* Dark mode is controlled by the .dark class on <html> element, not by system preferences */
+
+/* ============================================================================ */
+/* Modern CSS Features - December 2024 */
+/* ============================================================================ */
+
+/* CSS aspect-ratio - Prevents layout shifts for images and media */
+img, video, iframe {
+  aspect-ratio: attr(width) / attr(height);
+  height: auto;
+  max-width: 100%;
+  display: block;
+}
+
+/* Fallback for images without dimensions */
+img:not([width]):not([height]) {
+  aspect-ratio: auto;
+}
+
+/* Skeleton loader with aspect ratio */
+.skeleton-loader {
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-hover) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Scroll-driven animations - Hardware-accelerated, runs on compositor thread */
+@supports (animation-timeline: view()) {
+  .fade-in-on-scroll {
+    animation: fade-in-up linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Scroll progress indicator */
+  .scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    transform-origin: left;
+    animation: scroll-progress linear;
+    animation-timeline: scroll(root);
+    z-index: 100;
+  }
+
+  @keyframes scroll-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/* Container queries for component-based responsive design */
+@supports (container-type: inline-size) {
+  .card-container {
+    container-type: inline-size;
+    container-name: card;
+  }
+
+  @container card (min-width: 400px) {
+    .card-content {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1rem;
+    }
+  }
+
+  @container card (max-width: 399px) {
+    .card-content {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
