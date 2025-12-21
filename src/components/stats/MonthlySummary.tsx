@@ -16,12 +16,11 @@ interface MonthlySummaryProps {
 
 export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummaryProps) {
   // Optimized selectors with shallow comparison - only re-render when data actually changes
-  const { incomeEntries, fixedExpenses, paymentPlans, paymentPlanPayments, goals, dailyData } = useStore(
+  const { incomeEntries, fixedExpenses, paymentPlans, goals, dailyData } = useStore(
     useShallow((state) => ({
       incomeEntries: state.incomeEntries,
       fixedExpenses: state.fixedExpenses,
       paymentPlans: state.paymentPlans,
-      paymentPlanPayments: state.paymentPlanPayments,
       goals: state.goals,
       dailyData: state.dailyData,
     }))
@@ -58,18 +57,10 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       if (expense.isActive) totalBills += expense.amount;
     }
 
-    // Single pass: identify paid plans for this month
-    const paidPlanIdsThisMonth = new Set<string>();
-    for (const payment of paymentPlanPayments) {
-      if (payment.isPaid && payment.month === currentMonthKey) {
-        paidPlanIdsThisMonth.add(payment.paymentPlanId);
-      }
-    }
-
-    // Single pass: calculate payment plans minimum due
+    // Calculate payment plans minimum due (always show full amount, regardless of paid status)
     let paymentPlansMinimumDue = 0;
     for (const plan of paymentPlans) {
-      if (!plan.isComplete && !paidPlanIdsThisMonth.has(plan.id)) {
+      if (!plan.isComplete) {
         paymentPlansMinimumDue += plan.minimumMonthlyPayment ?? plan.paymentAmount;
       }
     }
@@ -85,7 +76,7 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       net,
       totalMiles,
     };
-  }, [currentDate, incomeEntries, fixedExpenses, paymentPlans, paymentPlanPayments, dailyData]);
+  }, [currentDate, incomeEntries, fixedExpenses, paymentPlans, dailyData]);
 
   // Get current monthly goals with prioritized allocation
   const currentMonthGoalProgress = useMemo(() => {
