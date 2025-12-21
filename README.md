@@ -35,6 +35,15 @@ A comprehensive, modern web application for gig workers to track income, expense
 - **Progress Tracking**: Visual progress bars showing real-time completion status.
 - **Priority System**: Manage multiple goals with different priority levels.
 
+#### 📊 Earnings Simulator (Amazon Flex)
+- **Weekly Forecasting**: Predict weekly earnings and gas costs based on your historical data.
+- **Optimal Schedule Generator**: Automatically finds the best block mix under 40h/week and 8h/day limits.
+- **Historical Averages**: Analyzes your past Amazon Flex earnings by block length (3h, 3.5h, 4h, 4.5h).
+- **Gas Cost Estimation**: Configure blocks before gas fill-up, gas price, and tank size to estimate fuel expenses.
+- **Minimum Rate Thresholds**: Set minimum acceptable rates per block type to filter out low-paying offers.
+- **7-Day Schedule Visualization**: See a recommended daily breakdown of blocks to maximize earnings.
+- **Net Earnings Projection**: View gross earnings, gas expenses, and net profit for the week.
+
 #### 👤 Single User Experience
 - **No Login Required**: Streamlined "Single User Mode" bypasses authentication for instant access.
 - **Cloud Sync**: All data is securely stored in a Supabase cloud database, accessible from any device.
