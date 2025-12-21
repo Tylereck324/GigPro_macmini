@@ -156,6 +156,17 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
           </div>
         </div>
 
+        {/* Total Monthly Expenses */}
+        <div className="p-4 bg-danger/10 border border-danger/20 rounded-lg">
+          <div className="text-sm text-textSecondary mb-1">Total Monthly Expenses</div>
+          <div className="text-2xl font-bold text-danger">
+            {formatCurrency(monthlyTotals.totalBills + monthlyTotals.paymentPlansMinimumDue + monthlyTotals.totalGasExpenses)}
+          </div>
+          <div className="text-xs text-textSecondary mt-2">
+            Fixed: {formatCurrency(monthlyTotals.totalBills)} • Plans: {formatCurrency(monthlyTotals.paymentPlansMinimumDue)} • Gas: {formatCurrency(monthlyTotals.totalGasExpenses)}
+          </div>
+        </div>
+
         {/* Net */}
         <div
           className={`p-4 rounded-lg border ${monthlyTotals.net >= 0
