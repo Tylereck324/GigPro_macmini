@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { format } from 'date-fns';
@@ -25,7 +27,7 @@ interface DayCellProps {
   elementRef?: React.RefCallback<HTMLDivElement>;
 }
 
-export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, elementRef }: DayCellProps) {
+export const DayCell = memo(function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, elementRef }: DayCellProps) {
   const router = useRouter();
   const isCurrentMonth = isInSameMonth(date, currentMonth);
   const today = isDateToday(date);
@@ -125,4 +127,4 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
       </div>
     </div>
   );
-}
+});

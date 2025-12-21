@@ -1,5 +1,13 @@
 import { supabase } from '../supabase';
 import type { ExportData } from '@/types/settings';
+import type {
+  IncomeEntryRow,
+  DailyDataRow,
+  FixedExpenseRow,
+  PaymentPlanRow,
+  PaymentPlanPaymentRow,
+} from '@/types/database';
+import type { GigPlatform, PaymentPlanProvider, PaymentFrequency } from '@/types/common';
 
 function downloadBlob(blob: Blob, filename: string) {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -74,55 +82,55 @@ export async function exportData(): Promise<void> {
       version: '1.0',
       exportDate: new Date().toISOString(),
       data: {
-        incomeEntries: (incomeEntries || []).map((entry: any) => ({
+        incomeEntries: (incomeEntries || []).map((entry: IncomeEntryRow) => ({
           id: entry.id,
           date: entry.date,
-          platform: entry.platform,
-          customPlatformName: entry.custom_platform_name,
+          platform: entry.platform as GigPlatform,
+          customPlatformName: entry.custom_platform_name ?? undefined,
           blockStartTime: entry.block_start_time,
           blockEndTime: entry.block_end_time,
           blockLength: entry.block_length,
-          amount: entry.amount,
+          amount: Number(entry.amount),
           notes: entry.notes,
           createdAt: new Date(entry.created_at).getTime(),
           updatedAt: new Date(entry.updated_at).getTime(),
         })),
-        dailyData: (dailyData || []).map((entry: any) => ({
+        dailyData: (dailyData || []).map((entry: DailyDataRow) => ({
           id: entry.id,
           date: entry.date,
-          mileage: entry.mileage,
-          gasExpense: entry.gas_expense,
+          mileage: entry.mileage != null ? Number(entry.mileage) : null,
+          gasExpense: entry.gas_expense != null ? Number(entry.gas_expense) : null,
           createdAt: new Date(entry.created_at).getTime(),
           updatedAt: new Date(entry.updated_at).getTime(),
         })),
-        fixedExpenses: (fixedExpenses || []).map((entry: any) => ({
+        fixedExpenses: (fixedExpenses || []).map((entry: FixedExpenseRow) => ({
           id: entry.id,
           name: entry.name,
-          amount: entry.amount,
+          amount: Number(entry.amount),
           dueDate: entry.due_date,
           isActive: entry.is_active,
           createdAt: new Date(entry.created_at).getTime(),
           updatedAt: new Date(entry.updated_at).getTime(),
         })),
-        paymentPlans: (paymentPlans || []).map((entry: any) => ({
+        paymentPlans: (paymentPlans || []).map((entry: PaymentPlanRow) => ({
           id: entry.id,
           name: entry.name,
-          provider: entry.provider,
-          initialCost: entry.initial_cost,
+          provider: entry.provider as PaymentPlanProvider,
+          initialCost: Number(entry.initial_cost),
           totalPayments: entry.total_payments,
           currentPayment: entry.current_payment,
-          paymentAmount: entry.payment_amount,
-          minimumMonthlyPayment: entry.minimum_monthly_payment,
+          paymentAmount: Number(entry.payment_amount),
+          minimumMonthlyPayment: entry.minimum_monthly_payment != null ? Number(entry.minimum_monthly_payment) : undefined,
           dueDay: entry.due_day ?? undefined,
           startDate: entry.start_date,
-          frequency: entry.frequency,
-          endDate: entry.end_date,
-          minimumPayment: entry.minimum_payment,
+          frequency: entry.frequency as PaymentFrequency,
+          endDate: entry.end_date ?? undefined,
+          minimumPayment: entry.minimum_payment != null ? Number(entry.minimum_payment) : undefined,
           isComplete: entry.is_complete,
           createdAt: new Date(entry.created_at).getTime(),
           updatedAt: new Date(entry.updated_at).getTime(),
         })),
-        paymentPlanPayments: (paymentPlanPayments || []).map((entry: any) => ({
+        paymentPlanPayments: (paymentPlanPayments || []).map((entry: PaymentPlanPaymentRow) => ({
           id: entry.id,
           paymentPlanId: entry.payment_plan_id,
           paymentNumber: entry.payment_number,
