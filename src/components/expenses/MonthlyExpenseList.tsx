@@ -80,8 +80,10 @@ export function MonthlyExpenseList({
   }, [paymentPlanPayments, currentMonth]);
 
   const getRemainingForPlan = (plan: PaymentPlan) => {
-    const paymentsMadeRaw = paymentStatsByPlanId[plan.id]?.paymentsMade ?? 0;
-    const paymentsMade = Math.min(Math.max(paymentsMadeRaw, 0), plan.totalPayments);
+    // Use currentPayment from the plan (1-indexed, represents next payment to make)
+    // So paymentsMade = currentPayment - 1 (e.g., if currentPayment=2, then 1 payment was made)
+    const paymentsMadeFromPlan = Math.max((plan.currentPayment ?? 1) - 1, 0);
+    const paymentsMade = Math.min(paymentsMadeFromPlan, plan.totalPayments);
     const remainingPayments = Math.max(plan.totalPayments - paymentsMade, 0);
     const remainingAmount = Math.max(
       plan.initialCost - paymentsMade * getPaymentAmount(plan),
@@ -96,8 +98,9 @@ export function MonthlyExpenseList({
       plan.minimumMonthlyPayment ?? plan.paymentAmount;
 
     const getRemainingForPlanTotals = (plan: PaymentPlan) => {
-      const paymentsMadeRaw = paymentStatsByPlanId[plan.id]?.paymentsMade ?? 0;
-      const paymentsMade = Math.min(Math.max(paymentsMadeRaw, 0), plan.totalPayments);
+      // Use currentPayment from the plan (1-indexed, represents next payment to make)
+      const paymentsMadeFromPlan = Math.max((plan.currentPayment ?? 1) - 1, 0);
+      const paymentsMade = Math.min(paymentsMadeFromPlan, plan.totalPayments);
       const remainingAmount = Math.max(
         plan.initialCost - paymentsMade * getPaymentAmountForTotals(plan),
         0
