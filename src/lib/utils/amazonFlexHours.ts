@@ -1,7 +1,13 @@
 import { minutesToHours } from './timeCalculations';
 import type { IncomeEntry, AmazonFlexHours } from '@/types/income';
 
-const DEFAULT_TIME_ZONE = 'America/New_York';
+import {
+  DEFAULT_TIME_ZONE,
+  AMAZON_FLEX_ROLLING_WINDOW_DAYS,
+  HOURS_REMAINING_WARNING_THRESHOLD,
+  HOURS_REMAINING_CRITICAL_THRESHOLD
+} from '../constants/amazonFlex';
+
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
 function getDateFormatter(timeZone: string): Intl.DateTimeFormat {
@@ -80,7 +86,8 @@ export function calculateAmazonFlexHours(
   // Calculate rolling 7-day window (including target date)
   // This uses calendar days based on the provided timezone:
   // at midnight in that timezone, the window shifts forward.
-  const weekStartKey = addDaysToDateKey(targetDateKey, -6); // 7 days including target
+  const weekStartKey = addDaysToDateKey(targetDateKey, -(AMAZON_FLEX_ROLLING_WINDOW_DAYS - 1)); // e.g. -6 for 7 days
+
   const weekEndKey = targetDateKey;
 
   let dailyMinutes = 0;
@@ -113,8 +120,8 @@ export function calculateAmazonFlexHours(
  * Get color class for hours remaining indicator
  */
 export function getHoursRemainingColor(hoursRemaining: number): string {
-  if (hoursRemaining > 3) return 'text-success';
-  if (hoursRemaining >= 1) return 'text-warning';
+  if (hoursRemaining > HOURS_REMAINING_WARNING_THRESHOLD) return 'text-success';
+  if (hoursRemaining >= HOURS_REMAINING_CRITICAL_THRESHOLD) return 'text-warning';
   return 'text-danger';
 }
 
