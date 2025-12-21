@@ -63,15 +63,15 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
       role="gridcell"
       tabIndex={tabIndex}
       aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${profit
-          ? profit.profit > 0
-            ? `Profit: ${formatCurrency(profit.profit)}`
-            : profit.profit < 0
-              ? `Loss: ${formatCurrency(profit.profit)}`
-              : 'Break-even'
-          : 'No activity'
+        ? profit.profit > 0
+          ? `Profit: ${formatCurrency(profit.profit)}`
+          : profit.profit < 0
+            ? `Loss: ${formatCurrency(profit.profit)}`
+            : 'Break-even'
+        : 'No activity'
         }`}
       className={clsx(
-        `min-h-[80px] sm:min-h-[100px] ${CELL_PADDING.mobile} ${CELL_PADDING.desktop} ${CELL_BORDER_WIDTH} ${CELL_BORDER_RADIUS} cursor-pointer`,
+        `min-h-[60px] sm:min-h-[90px] p-1 sm:p-3 ${CELL_BORDER_WIDTH} ${CELL_BORDER_RADIUS} cursor-pointer`,
         CELL_TRANSITION,
         CELL_HOVER_TRANSFORM,
         FOCUS_RING,
@@ -86,7 +86,7 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
     >
       <div className="flex flex-col h-full">
         {/* Date number and indicator */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1 sm:mb-2">
           <span
             className={clsx('text-sm font-semibold', {
               'text-text': isCurrentMonth,
