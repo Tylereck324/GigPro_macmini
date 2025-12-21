@@ -62,15 +62,14 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
       onFocus={onFocus}
       role="gridcell"
       tabIndex={tabIndex}
-      aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${
-        profit
+      aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${profit
           ? profit.profit > 0
             ? `Profit: ${formatCurrency(profit.profit)}`
             : profit.profit < 0
               ? `Loss: ${formatCurrency(profit.profit)}`
               : 'Break-even'
           : 'No activity'
-      }`}
+        }`}
       className={clsx(
         `min-h-[80px] sm:min-h-[100px] ${CELL_PADDING.mobile} ${CELL_PADDING.desktop} ${CELL_BORDER_WIDTH} ${CELL_BORDER_RADIUS} cursor-pointer`,
         CELL_TRANSITION,
@@ -110,13 +109,14 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
 
         {/* Profit information */}
         {hasAnyActivity && (
-          <div className="mt-auto">
+          <div className="mt-auto overflow-hidden">
             <div
-              className={clsx('text-xs font-bold', {
+              className={clsx('text-xs sm:text-sm font-bold truncate', {
                 'text-success': isProfitable,
                 'text-danger': isLoss,
                 'text-textSecondary': !isProfitable && !isLoss,
               })}
+              title={formatCurrency(profit.profit)}
             >
               {formatCurrency(profit.profit)}
             </div>
