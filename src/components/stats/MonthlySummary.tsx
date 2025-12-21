@@ -5,9 +5,9 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card } from '@/components/ui';
 import { useStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
-import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { formatCurrency, calculateMonthlyNetProfit } from '@/lib/utils/profitCalculations';
 import { GoalProgressBar } from '@/components/goals/GoalProgressBar';
-import { calculatePrioritizedGoalProgress } from '@/lib/utils/goalCalculations';
+import { calculatePrioritizedGoalProgress, calculateIncomeForRange } from '@/lib/utils/goalCalculations';
 
 interface MonthlySummaryProps {
   currentDate: Date;
@@ -26,54 +26,36 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
     }))
   );
 
-  // Calculate monthly totals - optimized to reduce loops
+  // Calculate monthly totals using canonical function
   const monthlyTotals = useMemo(() => {
     const monthStart = format(startOfMonth(currentDate), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(currentDate), 'yyyy-MM-dd');
-    const currentMonthKey = format(currentDate, 'yyyy-MM');
 
-    // Single pass: income + daily data (mileage)
-    let totalIncome = 0;
-    let totalMiles = 0;
+    // Use canonical function from goalCalculations.ts for income
+    const totalIncome = calculateIncomeForRange(incomeEntries, monthStart, monthEnd);
 
-    for (const entry of incomeEntries) {
-      if (entry.date >= monthStart && entry.date <= monthEnd) {
-        totalIncome += entry.amount;
-      }
-    }
+    // Get daily data for the month
+    const dailyDataForMonth = Object.values(dailyData).filter(
+      (day) => day.date >= monthStart && day.date <= monthEnd
+    );
 
-    // Combine dailyData iteration (mileage + gas calculation)
-    let totalGasExpenses = 0;
-    for (const dateKey in dailyData) {
-      if (dateKey >= monthStart && dateKey <= monthEnd) {
-        totalMiles += dailyData[dateKey].mileage || 0;
-        totalGasExpenses += dailyData[dateKey].gasExpense || 0;
-      }
-    }
+    // Use canonical function from profitCalculations.ts for net profit
+    const monthlyNet = calculateMonthlyNetProfit(
+      totalIncome,
+      fixedExpenses,
+      paymentPlans,
+      dailyDataForMonth
+    );
 
-    // Fixed expenses (always show full amount, regardless of active/paid status)
-    let totalBills = 0;
-    for (const expense of fixedExpenses) {
-      totalBills += expense.amount;
-    }
-
-    // Calculate payment plans minimum due (always show full amount, regardless of paid status)
-    let paymentPlansMinimumDue = 0;
-    for (const plan of paymentPlans) {
-      if (!plan.isComplete) {
-        paymentPlansMinimumDue += plan.minimumMonthlyPayment ?? plan.paymentAmount;
-      }
-    }
-
-    // Calculate net (income - bills - payment plans due - gas)
-    const net = totalIncome - totalBills - paymentPlansMinimumDue - totalGasExpenses;
+    // Calculate total miles
+    const totalMiles = dailyDataForMonth.reduce(
+      (sum, day) => sum + (day.mileage ?? 0),
+      0
+    );
 
     return {
       totalIncome,
-      totalBills,
-      paymentPlansMinimumDue,
-      totalGasExpenses,
-      net,
+      ...monthlyNet,
       totalMiles,
     };
   }, [currentDate, incomeEntries, fixedExpenses, paymentPlans, dailyData]);

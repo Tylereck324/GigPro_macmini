@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { getCurrentDateKey } from './dateHelpers';
 import type { ExportData } from '@/types/settings';
 import type {
   IncomeEntryRow,
@@ -168,7 +169,7 @@ export async function exportData(): Promise<void> {
     const blob = new Blob([jsonString], { type: 'application/json' });
 
     // Generate filename with date
-    const date = new Date().toISOString().split('T')[0];
+    const date = getCurrentDateKey();
     const filename = `gigpro-backup-${date}.json`;
 
     // Download file (avoid extra dependency; uses browser download APIs)

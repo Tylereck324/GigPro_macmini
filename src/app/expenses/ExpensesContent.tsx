@@ -7,7 +7,7 @@ import { FixedExpenseForm } from '@/components/expenses/FixedExpenseForm';
 import { PaymentPlanForm } from '@/components/expenses/PaymentPlanForm';
 import { MonthlyExpenseList } from '@/components/expenses/MonthlyExpenseList';
 import { useExpenseStore } from '@/store';
-import { getCurrentMonthKey } from '@/lib/utils/dateHelpers';
+import { getCurrentMonthKey, getCurrentDateKey } from '@/lib/utils/dateHelpers';
 import type {
   FixedExpense,
   PaymentPlan,
@@ -193,7 +193,7 @@ export function ExpensesContent() {
       (p) => p.paymentPlanId === plan.id && p.month === month
     );
 
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = getCurrentDateKey(); // YYYY-MM-DD
     const paymentsMade = combinedPaymentPlanPayments.filter(
       (p) => p.paymentPlanId === plan.id && p.isPaid
     ).length;

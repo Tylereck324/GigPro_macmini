@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import type { IncomeEntry } from '@/types/income';
 
 export type TimeOfDay = 'Early Morning' | 'Morning' | 'Afternoon' | 'Evening' | 'Night';
@@ -50,8 +51,8 @@ export function calculateTrends(entries: IncomeEntry[], platformFilter: string |
     if (!entry.blockStartTime || !entry.blockLength) continue;
 
     const date = new Date(entry.blockStartTime);
-    const dayIndex = date.getDay(); // 0 = Sunday
-    const dayName = DAYS[dayIndex];
+    // Use date-fns for consistent date handling
+    const dayName = format(date, 'EEE') as DayOfWeek; // Returns 'Sun', 'Mon', etc.
     const hour = date.getHours();
     const timeSlot = getTimeOfDay(hour);
 

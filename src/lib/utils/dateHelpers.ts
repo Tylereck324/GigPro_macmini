@@ -184,3 +184,16 @@ export function getMonthKey(date: Date): string {
     return '';
   }
 }
+
+/**
+ * Get the current date in YYYY-MM-DD format
+ * This is the canonical way to get today's date as a string
+ */
+export function getCurrentDateKey(): string {
+  try {
+    return format(new Date(), 'yyyy-MM-dd');
+  } catch (error) {
+    console.error('Error getting current date key:', error);
+    return '';
+  }
+}

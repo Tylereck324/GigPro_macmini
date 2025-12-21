@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { CalendarHeader } from './CalendarHeader';
 import { DayCell } from './DayCell';
 import { getCalendarDays, formatDateKey, getNextMonth, getPreviousMonth } from '@/lib/utils/dateHelpers';
+import { calculateDailyProfit } from '@/lib/utils/profitCalculations';
 import { useStore } from '@/store';
 import type { DailyProfit } from '@/types/dailyData';
 import type { IncomeEntry } from '@/types/income';
@@ -72,7 +73,7 @@ export function MonthlyCalendar({ onDateChange, isLoading = false }: MonthlyCale
         }
       }
 
-      // Calculate profit for each day
+      // Calculate profit for each day using canonical function
       for (const day of days) {
         const dateKey = formatDateKey(day);
         if (!dateKey) continue; // Skip invalid dates
@@ -80,23 +81,9 @@ export function MonthlyCalendar({ onDateChange, isLoading = false }: MonthlyCale
         const dayData = dailyData[dateKey];
         const dayIncome = incomeByDate.get(dateKey) || [];
 
-        // Inline calculation for better performance with validation
-        const totalIncome = dayIncome.reduce((sum, entry) => {
-          const amount = typeof entry.amount === 'number' ? entry.amount : 0;
-          return sum + amount;
-        }, 0);
-        const gasExpense = typeof dayData?.gasExpense === 'number' ? dayData.gasExpense : 0;
-        const profit = totalIncome - gasExpense;
-        const mileage = typeof dayData?.mileage === 'number' ? dayData.mileage : 0;
-        const earningsPerMile = mileage > 0 ? totalIncome / mileage : null;
-
-        newProfitByDate[dateKey] = {
-          date: dateKey,
-          totalIncome,
-          gasExpense,
-          profit,
-          earningsPerMile,
-        };
+        // Use canonical function from profitCalculations.ts
+        const profitData = calculateDailyProfit(dateKey, incomeEntries, dayData, dayIncome);
+        newProfitByDate[dateKey] = profitData;
       }
     } catch (error) {
       console.error('Error calculating profit data:', error);

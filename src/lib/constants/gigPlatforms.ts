@@ -6,6 +6,3 @@ export const GIG_PLATFORMS: Array<{ value: GigPlatform; label: string }> = [
   { value: 'WalmartSpark', label: 'Walmart Spark' },
   { value: 'Other', label: 'Other' },
 ];
-
-export const AMAZON_FLEX_DAILY_LIMIT = 8; // hours
-export const AMAZON_FLEX_WEEKLY_LIMIT = 40; // hours

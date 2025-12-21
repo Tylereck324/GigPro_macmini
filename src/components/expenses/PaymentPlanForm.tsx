@@ -13,6 +13,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Button, Input, Select, Card } from '../ui';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { calculatePaymentPlanRemaining } from '@/lib/utils/expenseCalculations';
+import { getCurrentDateKey } from '@/lib/utils/dateHelpers';
 import type { CreatePaymentPlan, PaymentPlan } from '@/types/expense';
 import type { PaymentPlanProvider, PaymentFrequency } from '@/types/common';
 
@@ -98,28 +100,37 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
   };
 
   /**
-   * Calculate remaining payments and amount
+   * Calculate remaining payments and amount using canonical function
    */
   const calculateRemaining = () => {
     if (!totalPayments || !currentPayment || !initialCost) {
       return { payments: 0, amount: 0 };
     }
 
-    const paymentAmount = calculatePaymentAmount();
-    const total = parseInt(totalPayments, 10);
-    const current = parseInt(currentPayment, 10);
-    const principal = parseFloat(initialCost);
+    // Build temporary plan object for canonical calculation
+    const tempPlan: PaymentPlan = {
+      id: 'temp-preview',
+      name: name || 'Preview',
+      provider: provider as PaymentPlanProvider,
+      initialCost: parseFloat(initialCost),
+      totalPayments: parseInt(totalPayments, 10),
+      currentPayment: parseInt(currentPayment, 10),
+      paymentAmount: calculatePaymentAmount(),
+      minimumMonthlyPayment: minimumMonthlyPayment ? parseFloat(minimumMonthlyPayment) : undefined,
+      startDate: startDate || getCurrentDateKey(),
+      endDate: endDate || undefined,
+      frequency: frequency as PaymentFrequency,
+      dueDay: 1, // Not used in calculation, just required by type
+      isComplete: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
 
-    // Payments made are everything before the current payment number (1-indexed)
-    const paymentsMade = Math.max(current - 1, 0);
-    const remainingPayments = Math.max(total - paymentsMade, 0);
-
-    // Remaining balance is principal minus what has been paid so far
-    const remainingAmount = Math.max(principal - paymentsMade * paymentAmount, 0);
-
+    // Use canonical function from expenseCalculations.ts
+    const result = calculatePaymentPlanRemaining(tempPlan);
     return {
-      payments: remainingPayments,
-      amount: remainingAmount,
+      payments: result.remainingPayments,
+      amount: result.remainingAmount,
     };
   };
 
@@ -190,7 +201,7 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
       if (provider === 'Other') {
         // Save custom payment plan
         const totalMonths = calculateMonthsFromNow(endDate);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getCurrentDateKey();
         const recommendedPayment = totalMonths > 0 ? parseFloat(initialCost) / totalMonths : 0;
 
         await onSave({
@@ -222,7 +233,7 @@ export function PaymentPlanForm({ initialData, onSave, onCancel }: PaymentPlanFo
           paymentAmount: calculatePaymentAmount(),
           minimumMonthlyPayment: minimumMonthlyPayment ? parseFloat(minimumMonthlyPayment) : undefined,
           dueDay: dueDay ? parseInt(dueDay, 10) : undefined,
-          startDate: startDate || new Date().toISOString().split('T')[0],
+          startDate: startDate || getCurrentDateKey(),
           endDate: endDate || undefined,
           frequency,
           // Preserve existing completion status when editing; completion is a separate action.

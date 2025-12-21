@@ -5,6 +5,9 @@
 import { z } from 'zod';
 import { gigPlatformSchema } from './common.validation';
 
+// Maximum reasonable block duration in minutes (16 hours)
+const MAX_BLOCK_DURATION_MINUTES = 16 * 60;
+
 // ============================================================================
 // Income Entry Validation
 // ============================================================================
@@ -69,6 +72,19 @@ export const incomeEntrySchema = incomeEntryBaseSchema
       message: 'Block end time cannot be before start time',
       path: ['blockEndTime'],
     }
+  )
+  .refine(
+    (data) => {
+      // Validate maximum block duration (16 hours)
+      if (data.blockLength !== null && data.blockLength > MAX_BLOCK_DURATION_MINUTES) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: `Block duration cannot exceed ${MAX_BLOCK_DURATION_MINUTES / 60} hours`,
+      path: ['blockLength'],
+    }
   );
 
 export const createIncomeEntrySchema = incomeEntryBaseSchema
@@ -99,6 +115,19 @@ export const createIncomeEntrySchema = incomeEntryBaseSchema
     {
       message: 'Block end time cannot be before start time',
       path: ['blockEndTime'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Validate maximum block duration (16 hours)
+      if (data.blockLength !== null && data.blockLength > MAX_BLOCK_DURATION_MINUTES) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: `Block duration cannot exceed ${MAX_BLOCK_DURATION_MINUTES / 60} hours`,
+      path: ['blockLength'],
     }
   );
 

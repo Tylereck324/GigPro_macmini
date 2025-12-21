@@ -5,6 +5,8 @@
 
 import type { IncomeEntry } from '@/types/income';
 import type { DailyData, DailyProfit } from '@/types/dailyData';
+import type { FixedExpense, PaymentPlan } from '@/types/expense';
+import { getPaymentAmount } from './expenseCalculations';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -59,6 +61,69 @@ export function calculateDailyProfit(
     profit,
     earningsPerMile,
   };
+}
+
+/**
+ * Calculate monthly net profit
+ *
+ * This is the canonical implementation for monthly net profit calculation.
+ * The formula is: Net = Income - Fixed Expenses - Payment Plans Minimum Due - Gas Expenses
+ *
+ * @param totalIncome - Total income for the month
+ * @param fixedExpenses - All fixed expenses (only active ones will be counted)
+ * @param paymentPlans - All payment plans (only incomplete ones will be counted)
+ * @param dailyDataForMonth - Array of daily data entries for gas expenses
+ * @returns Object with net profit and breakdown of all expense components
+ */
+export function calculateMonthlyNetProfit(
+  totalIncome: number,
+  fixedExpenses: FixedExpense[],
+  paymentPlans: PaymentPlan[],
+  dailyDataForMonth: DailyData[]
+): {
+  net: number;
+  totalBills: number;
+  paymentPlansMinimumDue: number;
+  totalGasExpenses: number;
+} {
+  // Sum active fixed expenses
+  const totalBills = fixedExpenses
+    .filter((e) => e.isActive)
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
+  // Sum payment plan minimum due (only incomplete plans)
+  const paymentPlansMinimumDue = paymentPlans
+    .filter((p) => !p.isComplete)
+    .reduce((sum, plan) => sum + getPaymentAmount(plan), 0);
+
+  // Sum gas expenses for the month
+  const totalGasExpenses = dailyDataForMonth.reduce(
+    (sum, day) => sum + (day.gasExpense ?? 0),
+    0
+  );
+
+  // Calculate net profit
+  const net = totalIncome - totalBills - paymentPlansMinimumDue - totalGasExpenses;
+
+  return {
+    net,
+    totalBills,
+    paymentPlansMinimumDue,
+    totalGasExpenses,
+  };
+}
+
+/**
+ * Calculate cost per mile (gas expense divided by miles driven)
+ * This metric helps track fuel efficiency and gas costs
+ *
+ * @param gasExpense - Total gas expense
+ * @param mileage - Total miles driven
+ * @returns Cost per mile in dollars, or null if no mileage
+ */
+export function calculateCostPerMile(gasExpense: number, mileage: number): number | null {
+  if (mileage <= 0) return null;
+  return gasExpense / mileage;
 }
 
 // ============================================================================

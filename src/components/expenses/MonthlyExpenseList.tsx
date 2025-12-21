@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { Card, ConfirmDialog } from '../ui';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { getPaymentAmount, calculatePaymentPlanRemaining } from '@/lib/utils/expenseCalculations';
 import clsx from 'clsx';
 import type { FixedExpense, PaymentPlan, PaymentPlanPayment } from '@/types/expense';
 
@@ -50,9 +51,6 @@ export function MonthlyExpenseList({
     });
   }, [paymentPlans]);
 
-  const getPaymentAmount = (plan: PaymentPlan) =>
-    plan.minimumMonthlyPayment ?? plan.paymentAmount;
-
   const paymentStatsByPlanId = useMemo(() => {
     const stats: Record<
       string,
@@ -79,34 +77,13 @@ export function MonthlyExpenseList({
     return stats;
   }, [paymentPlanPayments, currentMonth]);
 
-  const getRemainingForPlan = (plan: PaymentPlan) => {
-    // Use currentPayment from the plan (1-indexed, represents next payment to make)
-    // So paymentsMade = currentPayment - 1 (e.g., if currentPayment=2, then 1 payment was made)
-    const paymentsMadeFromPlan = Math.max((plan.currentPayment ?? 1) - 1, 0);
-    const paymentsMade = Math.min(paymentsMadeFromPlan, plan.totalPayments);
-    const remainingPayments = Math.max(plan.totalPayments - paymentsMade, 0);
-    const remainingAmount = Math.max(
-      plan.initialCost - paymentsMade * getPaymentAmount(plan),
-      0
-    );
-    return { remainingPayments, remainingAmount };
-  };
+  // Use canonical function from expenseCalculations.ts
+  const getRemainingForPlan = (plan: PaymentPlan) => calculatePaymentPlanRemaining(plan);
 
   // Calculate totals
   const totals = useMemo(() => {
-    const getPaymentAmountForTotals = (plan: PaymentPlan) =>
-      plan.minimumMonthlyPayment ?? plan.paymentAmount;
-
-    const getRemainingForPlanTotals = (plan: PaymentPlan) => {
-      // Use currentPayment from the plan (1-indexed, represents next payment to make)
-      const paymentsMadeFromPlan = Math.max((plan.currentPayment ?? 1) - 1, 0);
-      const paymentsMade = Math.min(paymentsMadeFromPlan, plan.totalPayments);
-      const remainingAmount = Math.max(
-        plan.initialCost - paymentsMade * getPaymentAmountForTotals(plan),
-        0
-      );
-      return { remainingAmount };
-    };
+    // Use canonical function from expenseCalculations.ts
+    const getRemainingForPlanTotals = (plan: PaymentPlan) => calculatePaymentPlanRemaining(plan);
 
     const fixedTotal = fixedExpenses
       .filter((e) => e.isActive)
@@ -119,7 +96,7 @@ export function MonthlyExpenseList({
     const paymentPlansMinimumDue = activePlans.reduce((sum, p) => {
       const paidThisMonth = paymentStatsByPlanId[p.id]?.paidThisMonth ?? false;
       if (paidThisMonth) return sum;
-      const monthlyAmount = getPaymentAmountForTotals(p);
+      const monthlyAmount = getPaymentAmount(p);
       return sum + monthlyAmount;
     }, 0);
 
