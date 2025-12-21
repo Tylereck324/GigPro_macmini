@@ -112,3 +112,20 @@ export function getTotalIncome(incomeEntries: IncomeEntry[]): number {
 export function formatCurrency(amount: number): string {
   return currencyFormatter.format(amount);
 }
+
+/**
+ * Format a number as compact currency (for space-constrained displays)
+ * Shows whole dollars for amounts >= $100, otherwise shows cents
+ *
+ * @param amount - Dollar amount to format
+ * @returns Compact formatted currency string (e.g., "$123" or "$45.50")
+ */
+export function formatCurrencyCompact(amount: number): string {
+  const absAmount = Math.abs(amount);
+  if (absAmount >= 100) {
+    // For larger amounts, show whole dollars only
+    return amount < 0 ? `-$${Math.round(absAmount)}` : `$${Math.round(absAmount)}`;
+  }
+  // For smaller amounts, keep cents
+  return currencyFormatter.format(amount);
+}

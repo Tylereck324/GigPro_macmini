@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import { isInSameMonth, isDateToday, formatDateKey } from '@/lib/utils/dateHelpers';
-import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/profitCalculations';
 import type { DailyProfit } from '@/types/dailyData';
 import {
   CELL_PADDING,
@@ -118,7 +118,7 @@ export function DayCell({ date, currentMonth, profit, onFocus, tabIndex = 0, ele
               })}
               title={formatCurrency(profit.profit)}
             >
-              {formatCurrency(profit.profit)}
+              {formatCurrencyCompact(profit.profit)}
             </div>
           </div>
         )}
