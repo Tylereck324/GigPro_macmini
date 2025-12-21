@@ -43,10 +43,12 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       }
     }
 
-    // Combine dailyData iteration (mileage calculation)
+    // Combine dailyData iteration (mileage + gas calculation)
+    let totalGasExpenses = 0;
     for (const dateKey in dailyData) {
       if (dateKey >= monthStart && dateKey <= monthEnd) {
         totalMiles += dailyData[dateKey].mileage || 0;
+        totalGasExpenses += dailyData[dateKey].gasExpense || 0;
       }
     }
 
@@ -72,13 +74,14 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       }
     }
 
-    // Calculate net (income - bills - payment plans due)
-    const net = totalIncome - totalBills - paymentPlansMinimumDue;
+    // Calculate net (income - bills - payment plans due - gas)
+    const net = totalIncome - totalBills - paymentPlansMinimumDue - totalGasExpenses;
 
     return {
       totalIncome,
       totalBills,
       paymentPlansMinimumDue,
+      totalGasExpenses,
       net,
       totalMiles,
     };
@@ -145,19 +148,25 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
           </div>
         </div>
 
+        {/* Gas Expenses */}
+        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+          <div className="text-sm text-textSecondary mb-1">Gas Expenses</div>
+          <div className="text-2xl font-bold text-orange-500">
+            {formatCurrency(monthlyTotals.totalGasExpenses)}
+          </div>
+        </div>
+
         {/* Net */}
         <div
-          className={`p-4 rounded-lg border ${
-            monthlyTotals.net >= 0
+          className={`p-4 rounded-lg border ${monthlyTotals.net >= 0
               ? 'bg-primary/10 border-primary/20'
               : 'bg-danger/10 border-danger/20'
-          }`}
+            }`}
         >
           <div className="text-sm text-textSecondary mb-1">Net (After All Expenses)</div>
           <div
-            className={`text-2xl font-bold ${
-              monthlyTotals.net >= 0 ? 'text-primary' : 'text-danger'
-            }`}
+            className={`text-2xl font-bold ${monthlyTotals.net >= 0 ? 'text-primary' : 'text-danger'
+              }`}
           >
             {formatCurrency(monthlyTotals.net)}
           </div>
