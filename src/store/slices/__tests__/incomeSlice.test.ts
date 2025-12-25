@@ -180,4 +180,34 @@ describe('incomeSlice', () => {
       expect(result).toEqual([entry1]);
     });
   });
+
+  describe('incomeByMonth', () => {
+    it('should populate incomeByMonth when loading entries', async () => {
+      const mockEntries = [
+        { id: '1', date: '2025-01-15', platform: 'AmazonFlex', amount: 100, notes: '', blockStartTime: null, blockEndTime: null, blockLength: null, createdAt: Date.now(), updatedAt: Date.now() },
+        { id: '2', date: '2025-01-20', platform: 'DoorDash', amount: 50, notes: '', blockStartTime: null, blockEndTime: null, blockLength: null, createdAt: Date.now(), updatedAt: Date.now() },
+        { id: '3', date: '2025-02-05', platform: 'AmazonFlex', amount: 75, notes: '', blockStartTime: null, blockEndTime: null, blockLength: null, createdAt: Date.now(), updatedAt: Date.now() },
+      ];
+
+      vi.mocked(incomeApi.getIncomeEntries).mockResolvedValueOnce(mockEntries as any);
+
+      await useStore.getState().loadIncomeEntries();
+
+      // Check incomeByMonth is populated correctly
+      expect(useStore.getState().incomeByMonth['2025-01']).toHaveLength(2);
+      expect(useStore.getState().incomeByMonth['2025-02']).toHaveLength(1);
+      expect(useStore.getState().incomeByMonth['2025-01'].map(e => e.id)).toEqual(['1', '2']);
+    });
+
+    it('should set per-month loading state when dateRange provided', async () => {
+      vi.mocked(incomeApi.getIncomeEntries).mockResolvedValueOnce([]);
+
+      await useStore.getState().loadIncomeEntries({
+        dateRange: { start: '2025-01-01', end: '2025-01-31' }
+      });
+
+      // Check loading state was set for the month (should be false after completion)
+      expect(useStore.getState().incomeLoadingByMonth['2025-01']).toBe(false);
+    });
+  });
 });

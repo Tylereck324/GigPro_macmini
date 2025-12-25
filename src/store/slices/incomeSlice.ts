@@ -120,23 +120,66 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   incomeError: null,
 
   loadIncomeEntries: async (options?: GetIncomeEntriesOptions) => {
+    // Determine which month we're loading (if date range specified)
+    const monthKey = options?.dateRange?.start
+      ? getMonthKey(options.dateRange.start)
+      : null;
+
+    // Set loading state
+    if (monthKey) {
+      set((state) => ({
+        incomeLoadingByMonth: { ...state.incomeLoadingByMonth, [monthKey]: true },
+      }));
+    }
     set({ incomeLoading: true, incomeError: null });
+
     try {
       const newEntries = await incomeApi.getIncomeEntries(options);
 
-      // Merge with existing entries, deduplicating by id
+      // Group new entries by month
+      const newEntriesByMonth = groupEntriesByMonth(newEntries);
+
       set((state) => {
+        // Merge with existing entries (flat array - backwards compat)
         const existingIds = new Set(newEntries.map((e) => e.id));
         const existingToKeep = state.incomeEntries.filter((e) => !existingIds.has(e.id));
+
+        // Merge incomeByMonth - replace months that were loaded
+        const updatedByMonth = { ...state.incomeByMonth };
+        for (const [month, entries] of Object.entries(newEntriesByMonth)) {
+          // If loading a specific month, replace it entirely
+          // If loading all, merge by replacing existing entries
+          if (monthKey && month === monthKey) {
+            updatedByMonth[month] = entries;
+          } else {
+            // Merge: keep entries not in new batch, add new entries
+            const existingMonthEntries = state.incomeByMonth[month] || [];
+            const filteredExisting = existingMonthEntries.filter(
+              (e) => !existingIds.has(e.id)
+            );
+            updatedByMonth[month] = [...filteredExisting, ...entries];
+          }
+        }
+
         return {
           incomeEntries: [...existingToKeep, ...newEntries],
+          incomeByMonth: updatedByMonth,
           incomeLoading: false,
+          incomeLoadingByMonth: monthKey
+            ? { ...state.incomeLoadingByMonth, [monthKey]: false }
+            : state.incomeLoadingByMonth,
         };
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load income entries';
       console.error('Failed to load income entries:', error);
-      set({ incomeLoading: false, incomeError: errorMessage });
+      set((state) => ({
+        incomeLoading: false,
+        incomeError: errorMessage,
+        incomeLoadingByMonth: monthKey
+          ? { ...state.incomeLoadingByMonth, [monthKey]: false }
+          : state.incomeLoadingByMonth,
+      }));
       throw error;
     }
   },
