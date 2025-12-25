@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useShallow } from 'zustand/react/shallow';
+import toast from 'react-hot-toast';
 import { MonthlyCalendar } from '@/components/calendar/MonthlyCalendar';
 import { MonthlySummary } from '@/components/stats/MonthlySummary';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
@@ -48,6 +49,8 @@ export default function Home() {
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
+      const message = error instanceof Error ? error.message : 'Failed to load data';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

@@ -17,6 +17,12 @@ import { calculateDailyProfit } from '@/lib/utils/profitCalculations';
 import { logError } from '@/lib/utils/logger';
 import type { IncomeEntry, CreateIncomeEntry } from '@/types/income';
 
+/**
+ * Number of days to load for the rolling week view.
+ * Required for AmazonFlexHoursTracker which shows a 7-day rolling window.
+ */
+const ROLLING_WEEK_DAYS = 7;
+
 interface DayContentProps {
   date: string; // YYYY-MM-DD
 }
@@ -35,10 +41,10 @@ export function DayContent({ date }: DayContentProps) {
 
   const { dailyData, loadDailyData, updateDailyData } = useDailyDataStore();
 
-  // Load data on mount
+  // Load data for rolling week window (required for AmazonFlexHoursTracker)
   useEffect(() => {
     const targetDate = parseISO(date);
-    const rangeStart = format(subDays(targetDate, 6), 'yyyy-MM-dd');
+    const rangeStart = format(subDays(targetDate, ROLLING_WEEK_DAYS - 1), 'yyyy-MM-dd');
     const rangeEnd = format(targetDate, 'yyyy-MM-dd');
 
     void loadIncomeEntries({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});

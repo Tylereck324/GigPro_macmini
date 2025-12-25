@@ -22,11 +22,16 @@ export const createDailyDataSlice: StateCreator<DailyDataSlice> = (set, get) => 
     set({ dailyDataLoading: true, dailyDataError: null });
     try {
       const dataArray = await dailyDataApi.getAllDailyData(options);
-      const dataMap = dataArray.reduce((acc, item) => {
+      const newDataMap = dataArray.reduce((acc, item) => {
         acc[item.date] = item;
         return acc;
       }, {} as Record<string, DailyData>);
-      set({ dailyData: dataMap, dailyDataLoading: false });
+
+      // Merge with existing data instead of replacing
+      set((state) => ({
+        dailyData: { ...state.dailyData, ...newDataMap },
+        dailyDataLoading: false,
+      }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load daily data';
       console.error('Failed to load daily data:', error);

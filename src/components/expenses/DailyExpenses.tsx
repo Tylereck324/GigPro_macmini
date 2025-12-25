@@ -27,14 +27,42 @@ export function DailyExpenses({ date, initialData, onSave }: DailyExpensesProps)
     setHasChanges(true);
   };
 
+  /**
+   * Parse a string input to a valid number or null.
+   * Handles edge cases: whitespace-only, non-numeric, negative values.
+   */
+  const parseNumericInput = (value: string, allowNegative = false): number | null => {
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+
+    const parsed = parseFloat(trimmed);
+    if (isNaN(parsed)) return null;
+    if (!allowNegative && parsed < 0) return null;
+
+    return parsed;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const parsedMileage = parseNumericInput(mileage);
+    const parsedGasExpense = parseNumericInput(gasExpense);
+
+    // Validate: if user entered something but it's invalid, show error
+    if (mileage.trim() !== '' && parsedMileage === null) {
+      toast.error('Invalid mileage value');
+      return;
+    }
+    if (gasExpense.trim() !== '' && parsedGasExpense === null) {
+      toast.error('Invalid gas expense value');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       await onSave({
-        mileage: mileage !== '' ? parseFloat(mileage) : null,
-        gasExpense: gasExpense !== '' ? parseFloat(gasExpense) : null,
+        mileage: parsedMileage,
+        gasExpense: parsedGasExpense,
       });
       setHasChanges(false);
     } catch (error) {
