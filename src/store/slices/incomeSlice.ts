@@ -10,6 +10,28 @@ import {
 } from '@/lib/constants/amazonFlex';
 
 /**
+ * Extract month key (YYYY-MM) from a date string (YYYY-MM-DD)
+ */
+function getMonthKey(dateStr: string): string {
+  return dateStr.slice(0, 7);
+}
+
+/**
+ * Group income entries by month key
+ */
+function groupEntriesByMonth(entries: IncomeEntry[]): Record<string, IncomeEntry[]> {
+  const result: Record<string, IncomeEntry[]> = {};
+  for (const entry of entries) {
+    const monthKey = getMonthKey(entry.date);
+    if (!result[monthKey]) {
+      result[monthKey] = [];
+    }
+    result[monthKey].push(entry);
+  }
+  return result;
+}
+
+/**
  * Cross-slice dependency: IncomeSlice needs Amazon Flex capacity settings from ThemeSlice.
  * This interface defines the expected shape for runtime access.
  */
