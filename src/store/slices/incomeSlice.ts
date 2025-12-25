@@ -19,11 +19,20 @@ interface AmazonFlexSettings {
 }
 
 export interface IncomeSlice {
+  // Existing flat array (kept for backwards compatibility during migration)
   incomeEntries: IncomeEntry[];
+
+  // NEW: Partitioned by month key "YYYY-MM"
+  incomeByMonth: Record<string, IncomeEntry[]>;
+
+  // NEW: Per-month loading states
+  incomeLoadingByMonth: Record<string, boolean>;
+
+  // Existing (kept for backwards compatibility)
   incomeLoading: boolean;
   incomeError: string | null;
 
-  // Actions
+  // Actions (unchanged signatures)
   loadIncomeEntries: (options?: GetIncomeEntriesOptions) => Promise<void>;
   addIncomeEntry: (entry: CreateIncomeEntry) => Promise<IncomeEntry>;
   updateIncomeEntry: (id: string, updates: UpdateIncomeEntry) => Promise<void>;
@@ -83,6 +92,8 @@ function validateAmazonFlexLimits(
 
 export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
   incomeEntries: [],
+  incomeByMonth: {},           // NEW
+  incomeLoadingByMonth: {},    // NEW
   incomeLoading: false,
   incomeError: null,
 
