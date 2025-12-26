@@ -67,7 +67,7 @@ export const DayCell = memo(function DayCell({ date, currentMonth, profit, onFoc
       tabIndex={tabIndex}
       aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${
         profit
-          ? profit.totalIncome > 0
+          ? hasAnyActivity
             ? `Income: ${formatCurrency(profit.totalIncome)}${
                 profit.gasExpense > 0
                   ? `, Expenses: ${formatCurrency(profit.gasExpense)}`
@@ -76,7 +76,7 @@ export const DayCell = memo(function DayCell({ date, currentMonth, profit, onFoc
                 profit.profit > 0
                   ? `Profit: ${formatCurrency(profit.profit)}`
                   : profit.profit < 0
-                    ? `Loss: ${formatCurrency(profit.profit)}`
+                    ? `Loss: ${formatCurrency(Math.abs(profit.profit))}`
                     : 'Break-even'
               }`
             : 'No activity'
