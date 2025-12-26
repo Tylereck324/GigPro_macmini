@@ -209,5 +209,31 @@ describe('incomeSlice', () => {
       // Check loading state was set for the month (should be false after completion)
       expect(useStore.getState().incomeLoadingByMonth['2025-01']).toBe(false);
     });
+
+    it('should add new entry to correct month bucket', async () => {
+      const newEntry = {
+        date: '2025-03-15',
+        platform: 'AmazonFlex' as const,
+        amount: 120,
+        notes: '',
+        blockStartTime: null,
+        blockEndTime: null,
+        blockLength: null,
+      };
+
+      const createdEntry = {
+        ...newEntry,
+        id: 'new-id',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      vi.mocked(incomeApi.createIncomeEntry).mockResolvedValueOnce(createdEntry);
+
+      await useStore.getState().addIncomeEntry(newEntry);
+
+      expect(useStore.getState().incomeByMonth['2025-03']).toHaveLength(1);
+      expect(useStore.getState().incomeByMonth['2025-03'][0].id).toBe('new-id');
+    });
   });
 });

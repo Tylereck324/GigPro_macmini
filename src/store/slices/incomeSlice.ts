@@ -217,9 +217,18 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       const newEntry = await incomeApi.createIncomeEntry(validatedEntry); // Use API helper
 
       // Update state with new entry
-      set((state) => ({
-        incomeEntries: [...state.incomeEntries, newEntry],
-      }));
+      set((state) => {
+        const monthKey = getMonthKey(newEntry.date);
+        const existingMonthEntries = state.incomeByMonth[monthKey] || [];
+
+        return {
+          incomeEntries: [...state.incomeEntries, newEntry],
+          incomeByMonth: {
+            ...state.incomeByMonth,
+            [monthKey]: [...existingMonthEntries, newEntry],
+          },
+        };
+      });
 
       return newEntry;
     } catch (error) {
