@@ -68,6 +68,27 @@ describe('DayMetrics', () => {
     expect(screen.getByText(/\$170/)).toBeInTheDocument();
   });
 
+  test('allows labels to truncate so amounts stay visible', () => {
+    const profit: DailyProfit = {
+      date: '2025-01-15',
+      totalIncome: 250,
+      gasExpense: 80,
+      profit: 170,
+      earningsPerMile: 3.5,
+    };
+
+    render(<DayMetrics profit={profit} />);
+
+    const incomeRow = screen.getByLabelText('Income: $250');
+    const incomeChildren = Array.from(incomeRow.children) as HTMLElement[];
+
+    expect(incomeChildren.length).toBeGreaterThanOrEqual(3);
+    expect(incomeChildren[1]).toHaveClass('min-w-0');
+    expect(incomeChildren[1]).toHaveClass('flex-1');
+    expect(incomeChildren[1]).toHaveClass('truncate');
+    expect(incomeChildren[2]).toHaveClass('shrink-0');
+  });
+
   test('applies correct colors for profit line', () => {
     const positiveProfit: DailyProfit = {
       date: '2025-01-15',

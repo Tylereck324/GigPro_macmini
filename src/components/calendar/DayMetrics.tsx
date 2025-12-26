@@ -32,11 +32,11 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
       {/* Income line */}
       <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`Income: ${formatCurrencyCompact(profit.totalIncome)}`}>
         <span className="text-success text-[10px] sm:text-xs">↑</span>
-        <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
+        <span className="min-w-0 flex-1 truncate text-textSecondary/70 text-[10px] sm:text-[11px]">
           <span className="sm:hidden">Inc</span>
           <span className="hidden sm:inline">Income</span>
         </span>
-        <span className="text-success font-bold text-[11px] sm:text-xs">
+        <span className="shrink-0 text-success font-bold text-[11px] sm:text-xs">
           {formatCurrencyCompact(profit.totalIncome)}
         </span>
       </div>
@@ -45,11 +45,11 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
       {profit.gasExpense > 0 && (
         <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`Expenses: ${formatCurrencyCompact(profit.gasExpense)}`}>
           <span className="text-danger text-[10px] sm:text-xs">↓</span>
-          <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
+          <span className="min-w-0 flex-1 truncate text-textSecondary/70 text-[10px] sm:text-[11px]">
             <span className="sm:hidden">Exp</span>
             <span className="hidden sm:inline">Expenses</span>
           </span>
-          <span className="text-danger font-bold text-[11px] sm:text-xs">
+          <span className="shrink-0 text-danger font-bold text-[11px] sm:text-xs">
             {formatCurrencyCompact(profit.gasExpense)}
           </span>
         </div>
@@ -58,11 +58,11 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
       {/* Profit line */}
       <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`${profit.profit > 0 ? 'Profit' : profit.profit < 0 ? 'Loss' : 'Break-even'}: ${formatCurrencyCompact(profit.profit)}`}>
         <span className={clsx(profitColor, 'text-[10px] sm:text-xs')}>=</span>
-        <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
+        <span className="min-w-0 flex-1 truncate text-textSecondary/70 text-[10px] sm:text-[11px]">
           <span className="sm:hidden">Net</span>
           <span className="hidden sm:inline">Profit</span>
         </span>
-        <span className={clsx(profitColor, 'font-bold text-[11px] sm:text-xs')}>
+        <span className={clsx(profitColor, 'shrink-0 font-bold text-[11px] sm:text-xs')}>
           {formatCurrencyCompact(profit.profit)}
         </span>
       </div>
