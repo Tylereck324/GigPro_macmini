@@ -344,9 +344,18 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
 
     try {
       // Optimistic delete
-      set((state) => ({
-        incomeEntries: state.incomeEntries.filter((entry) => entry.id !== id),
-      }));
+      set((state) => {
+        const monthKey = original ? getMonthKey(original.date) : null;
+        return {
+          incomeEntries: state.incomeEntries.filter((entry) => entry.id !== id),
+          incomeByMonth: monthKey
+            ? {
+                ...state.incomeByMonth,
+                [monthKey]: (state.incomeByMonth[monthKey] || []).filter((e) => e.id !== id),
+              }
+            : state.incomeByMonth,
+        };
+      });
 
       // Perform actual delete via API
       await incomeApi.deleteIncomeEntry(id); // Use API helper
@@ -355,9 +364,16 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       set({ incomeError: errorMessage });
       // Rollback with original captured data
       if (original) {
-        set((state) => ({
-          incomeEntries: [...state.incomeEntries, original],
-        }));
+        set((state) => {
+          const monthKey = getMonthKey(original.date);
+          return {
+            incomeEntries: [...state.incomeEntries, original],
+            incomeByMonth: {
+              ...state.incomeByMonth,
+              [monthKey]: [...(state.incomeByMonth[monthKey] || []), original],
+            },
+          };
+        });
       }
       console.error('Failed to delete income entry:', error);
       throw error;

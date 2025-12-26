@@ -297,5 +297,31 @@ describe('incomeSlice', () => {
       // Should be added to February
       expect(useStore.getState().incomeByMonth['2025-02']).toHaveLength(1);
     });
+
+    it('should remove entry from correct month bucket on delete', async () => {
+      const existingEntry = {
+        id: 'entry-1',
+        date: '2025-01-15',
+        platform: 'AmazonFlex' as const,
+        amount: 100,
+        notes: '',
+        blockStartTime: null,
+        blockEndTime: null,
+        blockLength: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      vi.mocked(incomeApi.getIncomeEntries).mockResolvedValueOnce([existingEntry]);
+      vi.mocked(incomeApi.deleteIncomeEntry).mockResolvedValueOnce(undefined);
+
+      await useStore.getState().loadIncomeEntries();
+
+      expect(useStore.getState().incomeByMonth['2025-01']).toHaveLength(1);
+
+      await useStore.getState().deleteIncomeEntry('entry-1');
+
+      expect(useStore.getState().incomeByMonth['2025-01']).toHaveLength(0);
+    });
   });
 });
