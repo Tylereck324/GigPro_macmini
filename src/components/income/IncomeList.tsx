@@ -15,7 +15,7 @@
 import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Card, ConfirmDialog } from '../ui';
+import { Button, Card, ConfirmDialog } from '../ui';
 import { formatDuration } from '@/lib/utils/timeCalculations';
 import { formatCurrency } from '@/lib/utils/profitCalculations';
 import type { IncomeEntry } from '@/types/income';
@@ -33,6 +33,8 @@ interface IncomeListProps {
   onEdit: (entry: IncomeEntry) => void;
   /** Callback when delete button is clicked */
   onDelete: (id: string) => void;
+  /** Callback when clone action is clicked */
+  onClone?: () => void;
 }
 
 // ============================================================================
@@ -118,7 +120,7 @@ function groupEntriesByPlatform(entries: IncomeEntry[]): Record<string, IncomeEn
 // Component
 // ============================================================================
 
-export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
+export function IncomeList({ entries, onEdit, onDelete, onClone }: IncomeListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string | null }>({
     isOpen: false,
@@ -160,20 +162,6 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   // ============================================================================
 
   const byPlatform = useMemo(() => groupEntriesByPlatform(entries), [entries]);
-
-  // ============================================================================
-  // Empty State
-  // ============================================================================
-
-  if (entries.length === 0) {
-    return (
-      <Card>
-        <p className="text-textSecondary text-center py-8">
-          No income entries for this day. Add one above to get started!
-        </p>
-      </Card>
-    );
-  }
 
   // ============================================================================
   // Render Item Component
@@ -239,34 +227,49 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-text">Income Entries</h3>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg font-semibold text-text">Income Entries</h3>
+        {onClone && (
+          <Button variant="outline" size="sm" onClick={onClone}>
+            Clone last income day
+          </Button>
+        )}
+      </div>
 
-      {Object.entries(byPlatform).map(([groupKey, platformEntries]) => {
-        const total = platformEntries.reduce((sum, e) => sum + e.amount, 0);
-        const firstEntry = platformEntries[0];
-        const platform = firstEntry.platform;
+      {entries.length === 0 ? (
+        <Card>
+          <p className="text-textSecondary text-center py-8">
+            No income entries for this day. Add one above to get started!
+          </p>
+        </Card>
+      ) : (
+        Object.entries(byPlatform).map(([groupKey, platformEntries]) => {
+          const total = platformEntries.reduce((sum, e) => sum + e.amount, 0);
+          const firstEntry = platformEntries[0];
+          const platform = firstEntry.platform;
 
-        return (
-          <Card key={groupKey} padding="none">
-            {/* Platform Header */}
-            <div className="p-4 border-b border-border bg-surface">
-              <div className="flex items-center justify-between">
-                <h4 className={clsx('text-md font-semibold', getPlatformColor(platform))}>
-                  {getPlatformLabel(firstEntry)}
-                </h4>
-                <span className="text-lg font-bold text-success">
-                  {formatCurrency(total)}
-                </span>
+          return (
+            <Card key={groupKey} padding="none">
+              {/* Platform Header */}
+              <div className="p-4 border-b border-border bg-surface">
+                <div className="flex items-center justify-between">
+                  <h4 className={clsx('text-md font-semibold', getPlatformColor(platform))}>
+                    {getPlatformLabel(firstEntry)}
+                  </h4>
+                  <span className="text-lg font-bold text-success">
+                    {formatCurrency(total)}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Entry List */}
-            <div>
-              {platformEntries.map((entry) => renderEntry(entry))}
-            </div>
-          </Card>
-        );
-      })}
+              {/* Entry List */}
+              <div>
+                {platformEntries.map((entry) => renderEntry(entry))}
+              </div>
+            </Card>
+          );
+        })
+      )}
 
       <ConfirmDialog
         isOpen={confirmDelete.isOpen}
