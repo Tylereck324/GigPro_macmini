@@ -6,7 +6,7 @@ import { formatCurrencyCompact } from '@/lib/utils/profitCalculations';
 import type { DailyProfit } from '@/types/dailyData';
 
 interface DayMetricsProps {
-  profit: DailyProfit;
+  profit: DailyProfit | null;
 }
 
 export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) {

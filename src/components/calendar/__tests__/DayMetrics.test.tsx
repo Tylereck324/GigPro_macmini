@@ -97,7 +97,7 @@ describe('DayMetrics', () => {
 
 describe('DayMetrics integration', () => {
   test('handles null profit gracefully', () => {
-    const { container } = render(<DayMetrics profit={null as any} />);
+    const { container } = render(<DayMetrics profit={null} />);
     expect(container.firstChild).toBeNull();
   });
 });
