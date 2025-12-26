@@ -155,3 +155,21 @@ export const useIncomeActions = () =>
       deleteIncomeEntry: state.deleteIncomeEntry,
     }))
   );
+
+/**
+ * Select only fixed expenses loading state
+ */
+export const useFixedExpensesLoading = () =>
+  useStore((state) => state.fixedExpensesLoading);
+
+/**
+ * Select only payment plans loading state
+ */
+export const usePaymentPlansLoading = () =>
+  useStore((state) => state.paymentPlansLoading);
+
+/**
+ * Select only payment plan payments loading state
+ */
+export const usePaymentPlanPaymentsLoading = () =>
+  useStore((state) => state.paymentPlanPaymentsLoading);

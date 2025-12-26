@@ -28,6 +28,13 @@ export interface ExpenseSlice {
   fixedExpenses: FixedExpense[];
   paymentPlans: PaymentPlan[];
   paymentPlanPayments: PaymentPlanPayment[];
+
+  // Separate loading states
+  fixedExpensesLoading: boolean;
+  paymentPlansLoading: boolean;
+  paymentPlanPaymentsLoading: boolean;
+
+  // Keep for backwards compatibility
   expenseLoading: boolean;
   expenseError: string | null;
 
@@ -54,19 +61,22 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
   fixedExpenses: [],
   paymentPlans: [],
   paymentPlanPayments: [],
+  fixedExpensesLoading: false,
+  paymentPlansLoading: false,
+  paymentPlanPaymentsLoading: false,
   expenseLoading: false,
   expenseError: null,
 
   // Fixed Expenses
   loadFixedExpenses: async () => {
-    set({ expenseLoading: true, expenseError: null });
+    set({ fixedExpensesLoading: true, expenseLoading: true, expenseError: null });
     try {
       const expenses = await fixedExpensesApi.getFixedExpenses();
-      set({ fixedExpenses: expenses, expenseLoading: false });
+      set({ fixedExpenses: expenses, fixedExpensesLoading: false, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load fixed expenses';
       console.error('Failed to load fixed expenses:', error);
-      set({ expenseLoading: false, expenseError: errorMessage });
+      set({ fixedExpensesLoading: false, expenseLoading: false, expenseError: errorMessage });
       throw error;
     }
   },
@@ -142,14 +152,14 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   // Payment Plans
   loadPaymentPlans: async () => {
-    set({ expenseLoading: true, expenseError: null });
+    set({ paymentPlansLoading: true, expenseLoading: true, expenseError: null });
     try {
       const plans = await paymentPlansApi.getPaymentPlans();
-      set({ paymentPlans: plans, expenseLoading: false });
+      set({ paymentPlans: plans, paymentPlansLoading: false, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load payment plans';
       console.error('Failed to load payment plans:', error);
-      set({ expenseLoading: false, expenseError: errorMessage });
+      set({ paymentPlansLoading: false, expenseLoading: false, expenseError: errorMessage });
       throw error;
     }
   },
@@ -230,15 +240,15 @@ export const createExpenseSlice: StateCreator<ExpenseSlice> = (set, get) => ({
 
   // Payment Plan Payments
   loadPaymentPlanPayments: async () => {
-    set({ expenseLoading: true, expenseError: null });
+    set({ paymentPlanPaymentsLoading: true, expenseLoading: true, expenseError: null });
     try {
       // Original API did not take planId, so fetch all payments
       const payments = await paymentPlanPaymentsApi.getPaymentPlanPayments(); // Call without planId argument
-      set({ paymentPlanPayments: payments, expenseLoading: false });
+      set({ paymentPlanPayments: payments, paymentPlanPaymentsLoading: false, expenseLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load payment plan payments';
       console.error('Failed to load payment plan payments:', error);
-      set({ expenseLoading: false, expenseError: errorMessage });
+      set({ paymentPlanPaymentsLoading: false, expenseLoading: false, expenseError: errorMessage });
       throw error;
     }
   },
