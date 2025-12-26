@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
-import { useShallow } from 'zustand/react/shallow';
 import { CalendarHeader } from './CalendarHeader';
 import { DayCell } from './DayCell';
 import { getCalendarDays, formatDateKey, getNextMonth, getPreviousMonth } from '@/lib/utils/dateHelpers';
 import { calculateDailyProfit } from '@/lib/utils/profitCalculations';
-import { useStore } from '@/store';
+import { useIncomeForMonth, useStore } from '@/store';
 import type { DailyProfit } from '@/types/dailyData';
 import type { IncomeEntry } from '@/types/income';
 import {
@@ -30,13 +29,14 @@ export function MonthlyCalendar({ onDateChange, isLoading = false }: MonthlyCale
   const calendarGridRef = useRef<HTMLDivElement>(null);
   const dayCellRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  // Optimized selectors with shallow comparison - only re-render when data actually changes
-  const { incomeEntries, dailyData } = useStore(
-    useShallow((state) => ({
-      incomeEntries: state.incomeEntries,
-      dailyData: state.dailyData,
-    }))
-  );
+  // Get current month key from currentDate state
+  const currentMonthKey = format(currentDate, 'yyyy-MM');
+
+  // Subscribe only to current month's income (granular)
+  const incomeEntries = useIncomeForMonth(currentMonthKey);
+
+  // Daily data is already keyed by date, keep as-is
+  const dailyData = useStore((state) => state.dailyData);
 
   const days = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const skeletonCellCount = days.length > 0 ? days.length : SKELETON_CELL_COUNT;
