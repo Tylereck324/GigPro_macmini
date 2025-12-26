@@ -1,6 +1,8 @@
+import { useCallback } from 'react';
 import { createWithEqualityFn } from 'zustand/traditional';
 import { devtools } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 import { createIncomeSlice, IncomeSlice } from './slices/incomeSlice';
 import { createDailyDataSlice, DailyDataSlice } from './slices/dailyDataSlice';
 import { createExpenseSlice, ExpenseSlice } from './slices/expenseSlice';
@@ -96,4 +98,60 @@ export const useGoalStore = () =>
       deleteGoal: state.deleteGoal,
     }),
     shallow
+  );
+
+// Granular selectors for optimized re-renders
+
+/**
+ * Select income entries for a specific month
+ * Only re-renders when that month's data changes
+ */
+export const useIncomeForMonth = (monthKey: string) =>
+  useStore(
+    useCallback(
+      (state: AppStore) => state.incomeByMonth[monthKey] ?? [],
+      [monthKey]
+    )
+  );
+
+/**
+ * Select income entries for a specific date
+ * Filters from the month bucket for efficiency
+ */
+export const useIncomeForDate = (dateKey: string) =>
+  useStore(
+    useCallback(
+      (state: AppStore) => {
+        const monthKey = dateKey.slice(0, 7);
+        return (state.incomeByMonth[monthKey] ?? []).filter(
+          (e) => e.date === dateKey
+        );
+      },
+      [dateKey]
+    )
+  );
+
+/**
+ * Select loading state for a specific month
+ */
+export const useIncomeLoadingForMonth = (monthKey: string) =>
+  useStore(
+    useCallback(
+      (state: AppStore) => state.incomeLoadingByMonth[monthKey] ?? false,
+      [monthKey]
+    )
+  );
+
+/**
+ * Select only income actions (no data subscription)
+ * Components that only modify data use this to avoid re-renders
+ */
+export const useIncomeActions = () =>
+  useStore(
+    useShallow((state) => ({
+      loadIncomeEntries: state.loadIncomeEntries,
+      addIncomeEntry: state.addIncomeEntry,
+      updateIncomeEntry: state.updateIncomeEntry,
+      deleteIncomeEntry: state.deleteIncomeEntry,
+    }))
   );
