@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import clsx from 'clsx';
 import { formatCurrencyCompact } from '@/lib/utils/profitCalculations';
 import type { DailyProfit } from '@/types/dailyData';
 
@@ -26,7 +27,7 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
   return (
     <div className="space-y-0.5 sm:space-y-1">
       {/* Income line */}
-      <div className="flex items-center gap-1 text-xs sm:text-sm">
+      <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`Income: ${formatCurrencyCompact(profit.totalIncome)}`}>
         <span className="text-success text-[10px] sm:text-xs">↑</span>
         <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
           <span className="sm:hidden">Inc</span>
@@ -39,7 +40,7 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
 
       {/* Expenses line - only show if there are expenses */}
       {profit.gasExpense > 0 && (
-        <div className="flex items-center gap-1 text-xs sm:text-sm">
+        <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`Expenses: ${formatCurrencyCompact(profit.gasExpense)}`}>
           <span className="text-danger text-[10px] sm:text-xs">↓</span>
           <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
             <span className="sm:hidden">Exp</span>
@@ -52,13 +53,13 @@ export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) 
       )}
 
       {/* Profit line */}
-      <div className="flex items-center gap-1 text-xs sm:text-sm">
-        <span className={`${profitColor} text-[10px] sm:text-xs`}>=</span>
+      <div className="flex items-center gap-1 text-xs sm:text-sm" aria-label={`${profit.profit > 0 ? 'Profit' : profit.profit < 0 ? 'Loss' : 'Break-even'}: ${formatCurrencyCompact(profit.profit)}`}>
+        <span className={clsx(profitColor, 'text-[10px] sm:text-xs')}>=</span>
         <span className="text-textSecondary/70 text-[10px] sm:text-[11px]">
           <span className="sm:hidden">Net</span>
           <span className="hidden sm:inline">Profit</span>
         </span>
-        <span className={`${profitColor} font-bold text-[11px] sm:text-xs`}>
+        <span className={clsx(profitColor, 'font-bold text-[11px] sm:text-xs')}>
           {formatCurrencyCompact(profit.profit)}
         </span>
       </div>
