@@ -3,11 +3,11 @@
 import { useMemo } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card } from '@/components/ui';
-import { useStore } from '@/store';
+import { useIncomeForMonth, useStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import { formatCurrency, calculateMonthlyNetProfit } from '@/lib/utils/profitCalculations';
 import { GoalProgressBar } from '@/components/goals/GoalProgressBar';
-import { calculatePrioritizedGoalProgress, calculateIncomeForRange } from '@/lib/utils/goalCalculations';
+import { calculatePrioritizedGoalProgress } from '@/lib/utils/goalCalculations';
 
 interface MonthlySummaryProps {
   currentDate: Date;
@@ -15,10 +15,13 @@ interface MonthlySummaryProps {
 }
 
 export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummaryProps) {
-  // Optimized selectors with shallow comparison - only re-render when data actually changes
-  const { incomeEntries, fixedExpenses, paymentPlans, goals, dailyData } = useStore(
+  const currentMonthKey = format(currentDate, 'yyyy-MM');
+
+  // Granular subscriptions
+  const incomeEntries = useIncomeForMonth(currentMonthKey);
+
+  const { fixedExpenses, paymentPlans, goals, dailyData } = useStore(
     useShallow((state) => ({
-      incomeEntries: state.incomeEntries,
       fixedExpenses: state.fixedExpenses,
       paymentPlans: state.paymentPlans,
       goals: state.goals,
@@ -26,20 +29,18 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
     }))
   );
 
-  // Calculate monthly totals using canonical function
   const monthlyTotals = useMemo(() => {
     const monthStart = format(startOfMonth(currentDate), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(currentDate), 'yyyy-MM-dd');
 
-    // Use canonical function from goalCalculations.ts for income
-    const totalIncome = calculateIncomeForRange(incomeEntries, monthStart, monthEnd);
+    // incomeEntries is already for current month, just sum it
+    const totalIncome = incomeEntries.reduce((sum, e) => sum + e.amount, 0);
 
     // Get daily data for the month
     const dailyDataForMonth = Object.values(dailyData).filter(
       (day) => day.date >= monthStart && day.date <= monthEnd
     );
 
-    // Use canonical function from profitCalculations.ts for net profit
     const monthlyNet = calculateMonthlyNetProfit(
       totalIncome,
       fixedExpenses,
@@ -47,7 +48,6 @@ export function MonthlySummary({ currentDate, isLoading = false }: MonthlySummar
       dailyDataForMonth
     );
 
-    // Calculate total miles
     const totalMiles = dailyDataForMonth.reduce(
       (sum, day) => sum + (day.mileage ?? 0),
       0
