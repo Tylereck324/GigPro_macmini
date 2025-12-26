@@ -7,15 +7,16 @@ import toast from 'react-hot-toast';
 import { MonthlyCalendar } from '@/components/calendar/MonthlyCalendar';
 import { MonthlySummary } from '@/components/stats/MonthlySummary';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
-import { useStore } from '@/store';
+import { useIncomeActions, useStore } from '@/store';
 
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Centralized data loading with shallow comparison - stable references
+  // Actions only - stable references, no re-renders on data change
+  const { loadIncomeEntries } = useIncomeActions();
+
   const {
-    loadIncomeEntries,
     loadDailyData,
     loadFixedExpenses,
     loadPaymentPlans,
@@ -23,7 +24,6 @@ export default function Home() {
     loadGoals,
   } = useStore(
     useShallow((state) => ({
-      loadIncomeEntries: state.loadIncomeEntries,
       loadDailyData: state.loadDailyData,
       loadFixedExpenses: state.loadFixedExpenses,
       loadPaymentPlans: state.loadPaymentPlans,
