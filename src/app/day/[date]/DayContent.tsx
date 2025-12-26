@@ -12,7 +12,7 @@ import { AmazonFlexHoursTracker } from '@/components/income/AmazonFlexHoursTrack
 import { DailyExpenses } from '@/components/expenses/DailyExpenses';
 import { DailyProfitCard } from '@/components/stats/DailyProfitCard';
 import { IncomeSummary } from '@/components/stats/IncomeSummary';
-import { useIncomeStore, useDailyDataStore } from '@/store';
+import { useIncomeForDate, useIncomeActions, useDailyDataStore, useStore } from '@/store';
 import { calculateDailyProfit } from '@/lib/utils/profitCalculations';
 import { logError } from '@/lib/utils/logger';
 import type { IncomeEntry, CreateIncomeEntry } from '@/types/income';
@@ -31,13 +31,16 @@ export function DayContent({ date }: DayContentProps) {
   const router = useRouter();
   const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
 
-  const {
-    incomeEntries,
-    loadIncomeEntries,
-    addIncomeEntry,
-    updateIncomeEntry,
-    deleteIncomeEntry,
-  } = useIncomeStore();
+  // Data subscription - only this date's entries
+  const incomeEntries = useIncomeForDate(date);
+
+  // Actions only - no data subscription
+  const { loadIncomeEntries, addIncomeEntry, updateIncomeEntry, deleteIncomeEntry } = useIncomeActions();
+
+  // Loading state for this month
+  const monthKey = date.slice(0, 7);
+  const incomeLoading = useStore((state) => state.incomeLoadingByMonth[monthKey] ?? false);
+  const incomeError = useStore((state) => state.incomeError);
 
   const { dailyData, loadDailyData, updateDailyData } = useDailyDataStore();
 
@@ -51,11 +54,6 @@ export function DayContent({ date }: DayContentProps) {
     void loadDailyData({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});
   }, [date, loadIncomeEntries, loadDailyData]);
 
-  // Get entries for this day
-  const dayEntries = useMemo(() => {
-    return incomeEntries.filter(entry => entry.date === date);
-  }, [date, incomeEntries]);
-
   // Get daily data for this day
   const dayData = useMemo(() => {
     return dailyData[date];
@@ -63,8 +61,8 @@ export function DayContent({ date }: DayContentProps) {
 
   // Calculate profit
   const profit = useMemo(
-    () => calculateDailyProfit(date, incomeEntries, dayData, dayEntries),
-    [date, incomeEntries, dayData, dayEntries]
+    () => calculateDailyProfit(date, incomeEntries, dayData, incomeEntries),
+    [date, incomeEntries, dayData]
   );
 
   // Check if there are Amazon Flex entries (to show hours tracker)
@@ -195,9 +193,9 @@ export function DayContent({ date }: DayContentProps) {
           />
 
           {/* Income List */}
-          {dayEntries.length > 0 && (
+          {incomeEntries.length > 0 && (
             <IncomeList
-              entries={dayEntries}
+              entries={incomeEntries}
               onEdit={handleEditIncome}
               onDelete={handleDeleteIncome}
             />
@@ -217,7 +215,7 @@ export function DayContent({ date }: DayContentProps) {
           <DailyProfitCard profit={profit} />
 
           {/* Income Summary */}
-          {dayEntries.length > 0 && <IncomeSummary entries={dayEntries} />}
+          {incomeEntries.length > 0 && <IncomeSummary entries={incomeEntries} />}
 
           {/* Amazon Flex Hours Tracker */}
           {hasAmazonFlexEntries && (
