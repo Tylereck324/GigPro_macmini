@@ -235,5 +235,67 @@ describe('incomeSlice', () => {
       expect(useStore.getState().incomeByMonth['2025-03']).toHaveLength(1);
       expect(useStore.getState().incomeByMonth['2025-03'][0].id).toBe('new-id');
     });
+
+    it('should update entry in correct month bucket', async () => {
+      // Pre-populate state
+      const existingEntry = {
+        id: 'entry-1',
+        date: '2025-01-15',
+        platform: 'AmazonFlex' as const,
+        amount: 100,
+        notes: '',
+        blockStartTime: null,
+        blockEndTime: null,
+        blockLength: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      vi.mocked(incomeApi.getIncomeEntries).mockResolvedValueOnce([existingEntry]);
+      vi.mocked(incomeApi.updateIncomeEntry).mockResolvedValueOnce({
+        ...existingEntry,
+        amount: 150,
+        updatedAt: Date.now(),
+      });
+
+      // Load initial data
+      await useStore.getState().loadIncomeEntries();
+
+      // Update the entry
+      await useStore.getState().updateIncomeEntry('entry-1', { amount: 150 });
+
+      expect(useStore.getState().incomeByMonth['2025-01'][0].amount).toBe(150);
+    });
+
+    it('should move entry between months when date changes', async () => {
+      const existingEntry = {
+        id: 'entry-1',
+        date: '2025-01-15',
+        platform: 'AmazonFlex' as const,
+        amount: 100,
+        notes: '',
+        blockStartTime: null,
+        blockEndTime: null,
+        blockLength: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      vi.mocked(incomeApi.getIncomeEntries).mockResolvedValueOnce([existingEntry]);
+      vi.mocked(incomeApi.updateIncomeEntry).mockResolvedValueOnce({
+        ...existingEntry,
+        date: '2025-02-10',
+        updatedAt: Date.now(),
+      });
+
+      await useStore.getState().loadIncomeEntries();
+
+      await useStore.getState().updateIncomeEntry('entry-1', { date: '2025-02-10' });
+
+      // Should be removed from January
+      expect(useStore.getState().incomeByMonth['2025-01'] || []).toHaveLength(0);
+      // Should be added to February
+      expect(useStore.getState().incomeByMonth['2025-02']).toHaveLength(1);
+    });
   });
 });

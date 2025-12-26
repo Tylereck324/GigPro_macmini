@@ -32,6 +32,39 @@ function groupEntriesByMonth(entries: IncomeEntry[]): Record<string, IncomeEntry
 }
 
 /**
+ * Helper to update incomeByMonth when an entry changes
+ */
+const updateByMonthForEntry = (
+  state: { incomeByMonth: Record<string, IncomeEntry[]> },
+  oldEntry: IncomeEntry | undefined,
+  newEntry: IncomeEntry
+): Record<string, IncomeEntry[]> => {
+  const result = { ...state.incomeByMonth };
+  const oldMonthKey = oldEntry ? getMonthKey(oldEntry.date) : null;
+  const newMonthKey = getMonthKey(newEntry.date);
+
+  // Remove from old month if it changed
+  if (oldMonthKey && oldMonthKey !== newMonthKey) {
+    result[oldMonthKey] = (result[oldMonthKey] || []).filter((e) => e.id !== newEntry.id);
+  }
+
+  // Update in new month
+  const monthEntries = result[newMonthKey] || [];
+  const existingIndex = monthEntries.findIndex((e) => e.id === newEntry.id);
+  if (existingIndex >= 0) {
+    result[newMonthKey] = [
+      ...monthEntries.slice(0, existingIndex),
+      newEntry,
+      ...monthEntries.slice(existingIndex + 1),
+    ];
+  } else {
+    result[newMonthKey] = [...monthEntries, newEntry];
+  }
+
+  return result;
+};
+
+/**
  * Cross-slice dependency: IncomeSlice needs Amazon Flex capacity settings from ThemeSlice.
  * This interface defines the expected shape for runtime access.
  */
@@ -267,10 +300,12 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
       validateAmazonFlexLimits(validatedUpdates, entriesWithUpdate, dailyCapacity, weeklyCapacity);
 
       // Optimistic update
+      const optimisticEntry = { ...original, ...validatedUpdates, updatedAt: Date.now() } as IncomeEntry;
       set((state) => ({
         incomeEntries: state.incomeEntries.map((entry) =>
-          entry.id === id ? { ...entry, ...validatedUpdates, updatedAt: Date.now() } : entry
+          entry.id === id ? optimisticEntry : entry
         ),
+        incomeByMonth: updateByMonthForEntry(state, original, optimisticEntry),
       }));
 
       // Perform actual update via API and get server response
@@ -281,16 +316,20 @@ export const createIncomeSlice: StateCreator<IncomeSlice> = (set, get) => ({
         incomeEntries: state.incomeEntries.map((entry) =>
           entry.id === id ? updatedEntry : entry
         ),
+        incomeByMonth: updateByMonthForEntry(state, original, updatedEntry),
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update income entry';
       set({ incomeError: errorMessage });
       // Rollback using original captured before update
       if (original) {
+        // Get the optimistic entry from current state to pass to updateByMonthForEntry
+        const currentEntry = get().incomeEntries.find((entry) => entry.id === id);
         set((state) => ({
           incomeEntries: state.incomeEntries.map((entry) =>
             entry.id === id ? original : entry
           ),
+          incomeByMonth: updateByMonthForEntry(state, currentEntry, original),
         }));
       }
       console.error('Failed to update income entry:', error);
