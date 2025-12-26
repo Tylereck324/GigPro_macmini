@@ -2,18 +2,20 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, parseISO, addDays, subDays } from 'date-fns';
+import { format, parseISO, addDays, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui';
 import { IncomeEntryForm } from '@/components/income/IncomeEntry';
 import { IncomeList } from '@/components/income/IncomeList';
+import { CloneIncomeModal } from '@/components/income/CloneIncomeModal';
 import { AmazonFlexHoursTracker } from '@/components/income/AmazonFlexHoursTracker';
 import { DailyExpenses } from '@/components/expenses/DailyExpenses';
 import { DailyProfitCard } from '@/components/stats/DailyProfitCard';
 import { IncomeSummary } from '@/components/stats/IncomeSummary';
-import { useIncomeForDate, useIncomeActions, useDailyDataStore, useStore } from '@/store';
+import { useIncomeForDate, useIncomeForMonth, useIncomeActions, useDailyDataStore, useStore } from '@/store';
 import { calculateDailyProfit } from '@/lib/utils/profitCalculations';
+import { buildClonePayloads, findMostRecentSourceDate } from '@/lib/utils/incomeClone';
 import { logError } from '@/lib/utils/logger';
 import type { IncomeEntry, CreateIncomeEntry } from '@/types/income';
 
@@ -27,9 +29,25 @@ interface DayContentProps {
   date: string; // YYYY-MM-DD
 }
 
+type CloneMode = 'append' | 'replace';
+
+interface CloneSelection {
+  sourceDate: string;
+  selected: IncomeEntry[];
+}
+
+interface CloneUndoPayload {
+  createdIds: string[];
+  replacedEntries: IncomeEntry[];
+  mode: CloneMode;
+}
+
 export function DayContent({ date }: DayContentProps) {
   const router = useRouter();
   const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [isClonePending, setIsClonePending] = useState(false);
+  const [cloneSelection, setCloneSelection] = useState<CloneSelection | null>(null);
 
   // Data subscription - only this date's entries
   const incomeEntries = useIncomeForDate(date);
@@ -39,6 +57,7 @@ export function DayContent({ date }: DayContentProps) {
 
   // Loading state for this month
   const monthKey = date.slice(0, 7);
+  const monthEntries = useIncomeForMonth(monthKey);
   const incomeLoading = useStore((state) => state.incomeLoadingByMonth[monthKey] ?? false);
   const incomeError = useStore((state) => state.incomeError);
 
@@ -53,6 +72,26 @@ export function DayContent({ date }: DayContentProps) {
     void loadIncomeEntries({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});
     void loadDailyData({ dateRange: { start: rangeStart, end: rangeEnd } }).catch(() => {});
   }, [date, loadIncomeEntries, loadDailyData]);
+
+  useEffect(() => {
+    if (!isClonePending) return;
+
+    const sourceDate = findMostRecentSourceDate(monthEntries, date);
+    if (!sourceDate) {
+      setEditingEntry(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const platformSelect = document.querySelector('select');
+      if (platformSelect instanceof HTMLSelectElement) {
+        platformSelect.focus();
+      }
+      toast('No prior income entries to clone. Add one above to get started!');
+      setIsClonePending(false);
+      return;
+    }
+
+    setIsCloneModalOpen(true);
+    setIsClonePending(false);
+  }, [date, isClonePending, monthEntries]);
 
   // Get daily data for this day
   const dayData = useMemo(() => {
@@ -103,6 +142,121 @@ export function DayContent({ date }: DayContentProps) {
       const message = error instanceof Error ? error.message : 'Failed to delete income entry';
       toast.error(message);
     }
+  };
+
+  const toCreateEntry = (entry: IncomeEntry): CreateIncomeEntry => ({
+    date: entry.date,
+    platform: entry.platform,
+    customPlatformName: entry.customPlatformName,
+    blockStartTime: entry.blockStartTime,
+    blockEndTime: entry.blockEndTime,
+    blockLength: entry.blockLength,
+    amount: entry.amount,
+    notes: entry.notes,
+  });
+
+  const handleUndoClone = async (payload: CloneUndoPayload) => {
+    try {
+      await Promise.all(payload.createdIds.map((id) => deleteIncomeEntry(id)));
+
+      if (payload.mode === 'replace' && payload.replacedEntries.length > 0) {
+        for (const entry of payload.replacedEntries) {
+          await addIncomeEntry(toCreateEntry(entry));
+        }
+      }
+
+      toast.success('Clone undone');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to undo clone';
+      toast.error(message);
+    }
+  };
+
+  const showCloneUndoToast = (payload: CloneUndoPayload) => {
+    toast.custom(
+      (t) => (
+        <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xl">
+          <span className="text-sm text-text">Cloned {payload.createdIds.length} entries</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void handleUndoClone(payload);
+              toast.dismiss(t.id);
+            }}
+          >
+            Undo
+          </Button>
+        </div>
+      ),
+      { duration: 10000 }
+    );
+  };
+
+  const performClone = async (mode: CloneMode, selection: CloneSelection) => {
+    const originals = mode === 'replace' ? [...incomeEntries] : [];
+
+    try {
+      if (mode === 'replace' && originals.length > 0) {
+        await Promise.all(originals.map((entry) => deleteIncomeEntry(entry.id)));
+      }
+
+      const payloads = buildClonePayloads(selection.selected, selection.sourceDate, date);
+      const createdEntries = await Promise.all(payloads.map((payload) => addIncomeEntry(payload)));
+
+      showCloneUndoToast({
+        createdIds: createdEntries.map((entry) => entry.id),
+        replacedEntries: originals,
+        mode,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to clone income entries';
+      toast.error(message);
+    }
+  };
+
+  const handleCloneFromLast = async () => {
+    const targetDate = parseISO(date);
+    const monthStart = format(startOfMonth(targetDate), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(targetDate), 'yyyy-MM-dd');
+
+    try {
+      await loadIncomeEntries({ dateRange: { start: monthStart, end: monthEnd } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load income entries';
+      toast.error(message);
+    } finally {
+      setIsClonePending(true);
+    }
+  };
+
+  const handleCloneConfirm = (payload: CloneSelection) => {
+    setIsCloneModalOpen(false);
+
+    if (payload.selected.length === 0) {
+      return;
+    }
+
+    if (incomeEntries.length > 0) {
+      setCloneSelection(payload);
+      return;
+    }
+
+    void performClone('append', payload);
+  };
+
+  const handleCloneAppend = () => {
+    if (!cloneSelection) return;
+    const selection = cloneSelection;
+    setCloneSelection(null);
+    void performClone('append', selection);
+  };
+
+  const handleCloneReplace = () => {
+    if (!cloneSelection) return;
+    const selection = cloneSelection;
+    setCloneSelection(null);
+    void performClone('replace', selection);
   };
 
   const handleSaveExpenses = async (data: { mileage: number | null; gasExpense: number | null }) => {
@@ -193,13 +347,12 @@ export function DayContent({ date }: DayContentProps) {
           />
 
           {/* Income List */}
-          {incomeEntries.length > 0 && (
-            <IncomeList
-              entries={incomeEntries}
-              onEdit={handleEditIncome}
-              onDelete={handleDeleteIncome}
-            />
-          )}
+          <IncomeList
+            entries={incomeEntries}
+            onEdit={handleEditIncome}
+            onDelete={handleDeleteIncome}
+            onClone={handleCloneFromLast}
+          />
 
           {/* Daily Expenses */}
           <DailyExpenses
@@ -223,6 +376,45 @@ export function DayContent({ date }: DayContentProps) {
           )}
         </div>
       </div>
+
+      <CloneIncomeModal
+        isOpen={isCloneModalOpen}
+        targetDate={date}
+        monthEntries={monthEntries}
+        onCancel={() => setIsCloneModalOpen(false)}
+        onConfirm={handleCloneConfirm}
+      />
+
+      {cloneSelection && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" role="presentation">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+            onClick={() => setCloneSelection(null)}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-lg mx-4 bg-surface rounded-2xl shadow-2xl border-2 border-border p-6 animate-scale-in"
+          >
+            <h2 className="text-xl font-bold text-text mb-3">Existing income entries</h2>
+            <p className="text-base text-textSecondary mb-6">
+              This day already has income entries. Append the cloned entries or replace the existing ones?
+            </p>
+            <div className="flex flex-wrap gap-3 justify-end">
+              <Button variant="ghost" onClick={() => setCloneSelection(null)}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={handleCloneReplace}>
+                Replace
+              </Button>
+              <Button variant="primary" onClick={handleCloneAppend}>
+                Append
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
