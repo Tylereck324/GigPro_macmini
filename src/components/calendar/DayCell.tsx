@@ -65,14 +65,23 @@ export const DayCell = memo(function DayCell({ date, currentMonth, profit, onFoc
       onFocus={onFocus}
       role="gridcell"
       tabIndex={tabIndex}
-      aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${profit
-        ? profit.profit > 0
-          ? `Profit: ${formatCurrency(profit.profit)}`
-          : profit.profit < 0
-            ? `Loss: ${formatCurrency(profit.profit)}`
-            : 'Break-even'
-        : 'No activity'
-        }`}
+      aria-label={`View details for ${format(date, 'MMMM d, yyyy')}. ${
+        profit
+          ? profit.totalIncome > 0
+            ? `Income: ${formatCurrency(profit.totalIncome)}${
+                profit.gasExpense > 0
+                  ? `, Expenses: ${formatCurrency(profit.gasExpense)}`
+                  : ''
+              }, ${
+                profit.profit > 0
+                  ? `Profit: ${formatCurrency(profit.profit)}`
+                  : profit.profit < 0
+                    ? `Loss: ${formatCurrency(profit.profit)}`
+                    : 'Break-even'
+              }`
+            : 'No activity'
+          : 'No activity'
+      }`}
       className={clsx(
         `min-h-[60px] sm:min-h-[90px] p-1 sm:p-3 ${CELL_BORDER_WIDTH} ${CELL_BORDER_RADIUS} cursor-pointer`,
         CELL_TRANSITION,
