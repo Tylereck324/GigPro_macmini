@@ -10,6 +10,9 @@ interface DayMetricsProps {
 }
 
 export const DayMetrics = memo(function DayMetrics({ profit }: DayMetricsProps) {
+  // Handle null/undefined profit
+  if (!profit) return null;
+
   // Check if there's any activity
   const hasActivity =
     profit.totalIncome !== 0 || profit.gasExpense !== 0 || profit.profit !== 0;

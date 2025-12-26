@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import { isInSameMonth, isDateToday, formatDateKey } from '@/lib/utils/dateHelpers';
-import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/profitCalculations';
+import { formatCurrency } from '@/lib/utils/profitCalculations';
+import { DayMetrics } from './DayMetrics';
 import type { DailyProfit } from '@/types/dailyData';
 import {
   CELL_PADDING,
@@ -109,21 +110,10 @@ export const DayCell = memo(function DayCell({ date, currentMonth, profit, onFoc
           )}
         </div>
 
-        {/* Profit information */}
-        {hasAnyActivity && (
-          <div className="mt-auto overflow-hidden">
-            <div
-              className={clsx('text-xs sm:text-sm font-bold truncate', {
-                'text-success': isProfitable,
-                'text-danger': isLoss,
-                'text-textSecondary': !isProfitable && !isLoss,
-              })}
-              title={formatCurrency(profit.profit)}
-            >
-              {formatCurrencyCompact(profit.profit)}
-            </div>
-          </div>
-        )}
+        {/* Metrics display */}
+        <div className="mt-auto overflow-hidden">
+          <DayMetrics profit={profit} />
+        </div>
       </div>
     </div>
   );

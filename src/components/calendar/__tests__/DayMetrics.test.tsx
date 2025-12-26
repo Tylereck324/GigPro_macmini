@@ -94,3 +94,10 @@ describe('DayMetrics', () => {
     expect(lossElement).toHaveClass('text-danger');
   });
 });
+
+describe('DayMetrics integration', () => {
+  test('handles null profit gracefully', () => {
+    const { container } = render(<DayMetrics profit={null as any} />);
+    expect(container.firstChild).toBeNull();
+  });
+});
