@@ -33,8 +33,12 @@ export async function middleware(request: NextRequest) {
   // Check if owner is configured using admin client (bypasses RLS)
   const admin = createAdminClient();
   if (!admin) {
-    // If admin client can't be created, allow access (env not configured)
-    return NextResponse.next();
+    // If admin client can't be created (missing env vars), redirect to setup
+    // This handles first-run or misconfigured deployments
+    if (pathname.startsWith('/login')) {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL('/setup', request.url));
   }
 
   const { data: owner, error: ownerError } = await admin
