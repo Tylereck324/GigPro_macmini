@@ -13,6 +13,11 @@ export function Header() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Don't show header on auth pages
+  if (pathname?.startsWith('/login') || pathname?.startsWith('/setup')) {
+    return null;
+  }
+
   const links = [
     { href: '/', label: 'Calendar', icon: '📅' },
     { href: '/trends', label: 'Trends', icon: '📈' },
