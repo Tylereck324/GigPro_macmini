@@ -17,15 +17,16 @@ export default function LoginPage() {
     const checkOwnerStatus = async () => {
       try {
         const res = await fetch('/api/auth/status');
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.ownerConfigured) {
-            router.replace('/setup');
-            return;
-          }
+        const data = await res.json();
+        // If not configured OR if there was an error (table doesn't exist), go to setup
+        if (!data.ownerConfigured || data.error) {
+          router.replace('/setup');
+          return;
         }
       } catch {
-        // If check fails, stay on login page
+        // If check completely fails, redirect to setup (likely first run)
+        router.replace('/setup');
+        return;
       }
       setIsChecking(false);
     };
