@@ -41,3 +41,6 @@ next-env.d.ts
 *.swp
 *.swo
 *~
+
+# git worktrees (project-local)
+.worktrees/

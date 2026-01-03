@@ -213,7 +213,9 @@ describe('exportImport', () => {
 
 
       // Expose the mocked functions for assertions
-      const neqDeleteMock = vi.fn().mockResolvedValue({ error: null });
+      // The actual code pattern is: supabase.from('table').delete().neq('id', '...')
+      // .neq() returns a Promise directly, no second .delete() call
+      const neqMock = vi.fn().mockResolvedValue({ error: null });
       const insertCalledMock = vi.fn().mockResolvedValue({ error: null });
       const updateEqCalledMock = vi.fn().mockResolvedValue({ error: null });
       const upsertCalledMock = vi.fn().mockResolvedValue({ error: null });
@@ -228,7 +230,7 @@ describe('exportImport', () => {
         };
 
         const mockDeleteResult = {
-          neq: vi.fn(() => ({ delete: neqDeleteMock })),
+          neq: neqMock,
         };
 
         return {
@@ -244,7 +246,7 @@ describe('exportImport', () => {
       await importData(mockFile);
 
       // Asserts are now against the specific vi.fn()s that are actually called
-      expect(neqDeleteMock).toHaveBeenCalledTimes(6); // Called for each delete clear
+      expect(neqMock).toHaveBeenCalledTimes(6); // Called for each table deletion
       expect(insertCalledMock).toHaveBeenCalled();
       expect(updateEqCalledMock).toHaveBeenCalledWith('id', 'settings');
       expect(upsertCalledMock).toHaveBeenCalled();
