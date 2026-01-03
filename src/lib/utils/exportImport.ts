@@ -10,13 +10,13 @@ export async function exportData(): Promise<void> {
   try {
     // Fetch all data from Supabase
     const [
-      { data: incomeEntries },
-      { data: dailyData },
-      { data: fixedExpenses },
-      { data: variableExpenses },
-      { data: paymentPlans },
-      { data: paymentPlanPayments },
-      { data: settings },
+      { data: incomeEntries, error: incomeEntriesError },
+      { data: dailyData, error: dailyDataError },
+      { data: fixedExpenses, error: fixedExpensesError },
+      { data: variableExpenses, error: variableExpensesError },
+      { data: paymentPlans, error: paymentPlansError },
+      { data: paymentPlanPayments, error: paymentPlanPaymentsError },
+      { data: settings, error: settingsError },
     ] = await Promise.all([
       supabase.from('income_entries').select('*'),
       supabase.from('daily_data').select('*'),
@@ -26,6 +26,18 @@ export async function exportData(): Promise<void> {
       supabase.from('payment_plan_payments').select('*'),
       supabase.from('app_settings').select('*').eq('id', 'settings').maybeSingle(), // Use maybeSingle now that it might not exist
     ]);
+
+    const fetchError =
+      incomeEntriesError ||
+      dailyDataError ||
+      fixedExpensesError ||
+      variableExpensesError ||
+      paymentPlansError ||
+      paymentPlanPaymentsError ||
+      settingsError;
+    if (fetchError) {
+      throw new Error(fetchError.message);
+    }
 
     // Map data from snake_case to camelCase
     const exportData: ExportData = {
@@ -135,13 +147,16 @@ export async function exportData(): Promise<void> {
     saveAs(blob, filename);
 
     // Update last export date in settings
-    await supabase
+    const { error: updateError } = await supabase
       .from('app_settings')
       .update({
         last_export_date: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', 'settings');
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
   } catch (error) {
     console.error('Export failed:', error);
     throw new Error('Failed to export data');
@@ -169,7 +184,7 @@ export async function importData(file: File): Promise<void> {
     }
 
     // Clear existing data (all data, no user_id filter needed)
-    await Promise.all([
+    const clearResults = await Promise.all([
       supabase.from('income_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
       supabase.from('daily_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
       supabase.from('fixed_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -177,6 +192,10 @@ export async function importData(file: File): Promise<void> {
       supabase.from('payment_plan_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
       supabase.from('payment_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
     ]);
+    const clearError = clearResults.find((r: any) => r?.error)?.error;
+    if (clearError) {
+      throw new Error(`Failed to clear existing data: ${clearError.message ?? String(clearError)}`);
+    }
 
     // Import income entries (map camelCase to snake_case)
     if (imported.data.incomeEntries && imported.data.incomeEntries.length > 0) {
@@ -312,19 +331,36 @@ export async function importData(file: File): Promise<void> {
       // For single-user, we expect one settings entry with id 'settings'
       const { error: upsertError } = await supabase
         .from('app_settings')
-        .upsert({ ...imported.data.settings, id: 'settings' }, { onConflict: 'id' });
+        .upsert(
+          {
+            id: 'settings',
+            theme: imported.data.settings.theme,
+            last_export_date: imported.data.settings.lastExportDate
+              ? new Date(imported.data.settings.lastExportDate).toISOString()
+              : null,
+            last_import_date: imported.data.settings.lastImportDate
+              ? new Date(imported.data.settings.lastImportDate).toISOString()
+              : null,
+            amazon_flex_daily_capacity: imported.data.settings.amazonFlexDailyCapacity,
+            amazon_flex_weekly_capacity: imported.data.settings.amazonFlexWeeklyCapacity,
+          },
+          { onConflict: 'id' }
+        );
       if (upsertError) throw new Error(`Failed to import settings: ${upsertError.message}`);
     }
 
 
     // Update last import date in settings
-    await supabase
+    const { error: updateError } = await supabase
       .from('app_settings')
       .update({
         last_import_date: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', 'settings');
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
   } catch (error) {
     console.error('Import failed:', error);
     if (error instanceof Error) {
@@ -339,12 +375,12 @@ export async function importData(file: File): Promise<void> {
  */
 export async function getDataStats() {
   const [
-    { count: incomeCount },
-    { count: dailyDataCount },
-    { count: fixedExpenseCount },
-    { count: variableExpenseCount },
-    { count: paymentPlanCount },
-    { data: settings },
+    { count: incomeCount, error: incomeError },
+    { count: dailyDataCount, error: dailyDataError },
+    { count: fixedExpenseCount, error: fixedExpenseError },
+    { count: variableExpenseCount, error: variableExpenseError },
+    { count: paymentPlanCount, error: paymentPlanError },
+    { data: settings, error: settingsError },
   ] = await Promise.all([
     supabase.from('income_entries').select('*', { count: 'exact', head: true }),
     supabase.from('daily_data').select('*', { count: 'exact', head: true }),
@@ -353,6 +389,17 @@ export async function getDataStats() {
     supabase.from('payment_plans').select('*', { count: 'exact', head: true }),
     supabase.from('app_settings').select('*').eq('id', 'settings').maybeSingle(),
   ]);
+
+  const statsError =
+    incomeError ||
+    dailyDataError ||
+    fixedExpenseError ||
+    variableExpenseError ||
+    paymentPlanError ||
+    settingsError;
+  if (statsError) {
+    throw new Error(statsError.message);
+  }
 
   return {
     incomeEntries: incomeCount || 0,
@@ -369,7 +416,7 @@ export async function getDataStats() {
  * Clear all data (with confirmation)
  */
 export async function clearAllData(): Promise<void> {
-  await Promise.all([
+  const clearResults = await Promise.all([
     supabase.from('income_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
     supabase.from('daily_data').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
     supabase.from('fixed_expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -377,4 +424,8 @@ export async function clearAllData(): Promise<void> {
     supabase.from('payment_plan_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
     supabase.from('payment_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
   ]);
+  const clearError = clearResults.find((r: any) => r?.error)?.error;
+  if (clearError) {
+    throw new Error(clearError.message ?? String(clearError));
+  }
 }

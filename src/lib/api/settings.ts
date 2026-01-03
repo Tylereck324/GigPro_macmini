@@ -13,32 +13,36 @@ export const settingsApi = {
       .eq('id', SETTINGS_ID)
       .maybeSingle();
 
-    if (error) {
-      console.error('Supabase select error:', error);
-      // If no rows found, auto-create default settings
-      if (error.code === 'PGRST116' || !data) { 
-        const { data: newData, error: insertError } = await supabase
-          .from('app_settings')
-          .insert({
-            id: SETTINGS_ID,
-            theme: 'light',
-            amazon_flex_daily_capacity: 480,
-            amazon_flex_weekly_capacity: 2400
-          })
-          .select()
-          .maybeSingle();
-        
-        if (insertError) {
-          console.error('Failed to create default settings:', insertError);
-          throw new Error(`Failed to create default settings: ${insertError.message}`);
+    // `maybeSingle()` can return `{ data: null, error: null }` when the row doesn't exist,
+    // so treat missing data the same as "no rows found" and create defaults.
+    if (error || !data) {
+      if (error) {
+        console.error('Supabase select error:', error);
+        // If it's not the "no rows found" case, surface the real error.
+        if (error.code !== 'PGRST116') {
+          throw new Error(error.message);
         }
-        if (!newData) {
-           throw new Error('Failed to create default settings: No data returned.');
-        }
-        data = newData;
-      } else {
-        throw new Error(error.message);
       }
+
+      const { data: newData, error: insertError } = await supabase
+        .from('app_settings')
+        .insert({
+          id: SETTINGS_ID,
+          theme: 'light',
+          amazon_flex_daily_capacity: 480,
+          amazon_flex_weekly_capacity: 2400
+        })
+        .select()
+        .maybeSingle();
+      
+      if (insertError) {
+        console.error('Failed to create default settings:', insertError);
+        throw new Error(`Failed to create default settings: ${insertError.message}`);
+      }
+      if (!newData) {
+         throw new Error('Failed to create default settings: No data returned.');
+      }
+      data = newData;
     }
 
     // Map snake_case to camelCase

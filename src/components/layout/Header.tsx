@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ThemeToggle } from '../ui';
+import { usePathname, useRouter } from 'next/navigation';
+import { Button, ThemeToggle } from '../ui';
 import clsx from 'clsx';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const links = [
@@ -19,6 +21,20 @@ export function Header() {
     { href: '/expenses', label: 'Expenses', icon: '💰' },
     { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to log out');
+      }
+      router.replace('/login');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to log out';
+      toast.error(message);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-lg border-b border-border/50 shadow-md">
@@ -53,6 +69,9 @@ export function Header() {
 
           {/* Right side - Theme Toggle & Mobile Menu */}
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              Log Out
+            </Button>
             <ThemeToggle />
 
             {/* Mobile menu button */}

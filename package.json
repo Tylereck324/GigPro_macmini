@@ -26,7 +26,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.23.25",
     "nanoid": "^5.0.0",
-    "next": "^14.2.0",
+    "next": "^14.2.35",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-hook-form": "^7.53.0",
@@ -50,9 +50,12 @@
     "@vitest/ui": "^4.0.15",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0",
+    "eslint-config-next": "^14.2.35",
     "jsdom": "^27.2.0",
     "postcss": "^8.4.49",
     "vitest": "^4.0.15"
+  },
+  "overrides": {
+    "glob": "10.5.0"
   }
 }

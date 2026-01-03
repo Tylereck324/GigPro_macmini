@@ -160,6 +160,36 @@ describe('exportImport', () => {
       expect(mockUpdateEq).toHaveBeenCalledWith('id', 'settings');
     });
 
+    it('should abort export when any table fetch fails', async () => {
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'income_entries') {
+          return {
+            select: vi.fn().mockResolvedValue({
+              data: null,
+              error: { message: 'Database error' },
+            }),
+          } as any;
+        }
+
+        if (table === 'app_settings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          } as any;
+        }
+
+        return {
+          select: vi.fn().mockResolvedValue({ data: [], error: null }),
+        } as any;
+      });
+
+      await expect(exportData()).rejects.toThrow('Failed to export data');
+      expect(saveAs).not.toHaveBeenCalled();
+    });
+
     it('should handle export errors', async () => {
       vi.mocked(supabase.from).mockReturnValue({
         select: vi.fn().mockResolvedValue({
@@ -213,6 +243,8 @@ describe('exportImport', () => {
 
 
       // Expose the mocked functions for assertions
+      // `importData()` clears tables with `delete().neq(...)` (no trailing `.delete()`),
+      // so our mock must return a promise from `neq()` (the awaited call).
       const neqDeleteMock = vi.fn().mockResolvedValue({ error: null });
       const insertCalledMock = vi.fn().mockResolvedValue({ error: null });
       const updateEqCalledMock = vi.fn().mockResolvedValue({ error: null });
@@ -227,9 +259,7 @@ describe('exportImport', () => {
           maybeSingle: vi.fn().mockResolvedValue(mockResponse),
         };
 
-        const mockDeleteResult = {
-          neq: vi.fn(() => ({ delete: neqDeleteMock })),
-        };
+        const mockDeleteResult = { neq: neqDeleteMock };
 
         return {
           select: vi.fn().mockResolvedValue(mockResponse),
@@ -247,7 +277,66 @@ describe('exportImport', () => {
       expect(neqDeleteMock).toHaveBeenCalledTimes(6); // Called for each delete clear
       expect(insertCalledMock).toHaveBeenCalled();
       expect(updateEqCalledMock).toHaveBeenCalledWith('id', 'settings');
-      expect(upsertCalledMock).toHaveBeenCalled();
+      expect(upsertCalledMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'settings',
+          theme: 'light',
+          last_export_date: null,
+          last_import_date: null,
+          amazon_flex_daily_capacity: 480,
+          amazon_flex_weekly_capacity: 2400,
+        }),
+        { onConflict: 'id' }
+      );
+
+      const [upsertPayload] = upsertCalledMock.mock.calls[0] ?? [];
+      expect(upsertPayload).not.toHaveProperty('amazonFlexDailyCapacity');
+      expect(upsertPayload).not.toHaveProperty('amazonFlexWeeklyCapacity');
+    });
+
+    it('should fail if clearing existing data fails', async () => {
+      const mockFile = createMockFile(
+        JSON.stringify({
+          version: '1.0',
+          exportDate: '2025-12-01T00:00:00Z',
+          data: {
+            incomeEntries: [],
+            dailyData: [],
+            fixedExpenses: [],
+            variableExpenses: [],
+            paymentPlans: [],
+            paymentPlanPayments: [],
+            settings: null,
+          },
+        }),
+      );
+
+      const neqOk = vi.fn().mockResolvedValue({ error: null });
+      const neqFail = vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } });
+
+      const updateEqOk = vi.fn().mockResolvedValue({ error: null });
+
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'income_entries') {
+          return {
+            delete: vi.fn(() => ({ neq: neqFail })),
+          } as any;
+        }
+
+        if (table === 'app_settings') {
+          return {
+            update: vi.fn(() => ({ eq: updateEqOk })),
+          } as any;
+        }
+
+        return {
+          delete: vi.fn(() => ({ neq: neqOk })),
+        } as any;
+      });
+
+      await expect(importData(mockFile)).rejects.toThrow(
+        'Failed to import data: Failed to clear existing data: Delete failed'
+      );
     });
 
     it('should reject unsupported export version', async () => {
@@ -283,7 +372,7 @@ describe('exportImport', () => {
 
       // Mock delete to succeed
       const neqDeleteMock = vi.fn().mockResolvedValue({ error: null });
-      const mockDeleteResult = { neq: vi.fn(() => ({ delete: neqDeleteMock })) };
+      const mockDeleteResult = { neq: neqDeleteMock };
 
       // Mock insert to fail for income_entries
       const insertCalledMock = vi.fn().mockResolvedValue({
@@ -319,7 +408,7 @@ describe('exportImport', () => {
       );
 
       const neqDeleteMock = vi.fn().mockResolvedValue({ error: null });
-      const mockDeleteResult = { neq: vi.fn(() => ({ delete: neqDeleteMock })) };
+      const mockDeleteResult = { neq: neqDeleteMock };
 
       const updateEqCalledMock = vi.fn().mockResolvedValue({ error: null });
       const updateCalledMock = vi.fn(() => ({ eq: updateEqCalledMock }));
