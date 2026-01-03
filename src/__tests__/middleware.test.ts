@@ -1,21 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-// Mock for admin client (used for app_owner check)
-const adminFromSelect = vi.fn();
-const createClient = vi.fn(() => ({
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        maybeSingle: adminFromSelect,
-      })),
-    })),
-  })),
-}));
-
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: (...args: unknown[]) => createClient(...args),
-}));
+// Mock global fetch for the REST API call
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 // Mock for SSR client (used for auth check)
 const getUser = vi.fn();
@@ -31,16 +19,15 @@ import { middleware } from '../../middleware';
 
 describe('middleware auth gating', () => {
   beforeEach(() => {
-    // Set env vars for admin client
+    // Set env vars
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://localhost:54321');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
   });
 
   afterEach(() => {
     getUser.mockReset();
-    adminFromSelect.mockReset();
+    mockFetch.mockReset();
     createSupabaseServerClient.mockClear();
-    createClient.mockClear();
     vi.unstubAllEnvs();
   });
 
@@ -55,7 +42,11 @@ describe('middleware auth gating', () => {
   });
 
   it('redirects to /setup when owner not configured', async () => {
-    adminFromSelect.mockResolvedValue({ data: null, error: null });
+    // Empty array = no owner configured
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
     getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     const req = new NextRequest('http://localhost/');
@@ -65,7 +56,11 @@ describe('middleware auth gating', () => {
   });
 
   it('redirects unauthenticated users to /login when owner is configured', async () => {
-    adminFromSelect.mockResolvedValue({ data: { owner_user_id: 'test-uuid' }, error: null });
+    // Array with owner = configured
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([{ owner_user_id: 'test-uuid' }]),
+    });
     getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     const req = new NextRequest('http://localhost/');
@@ -75,7 +70,10 @@ describe('middleware auth gating', () => {
   });
 
   it('allows authenticated users when owner is configured', async () => {
-    adminFromSelect.mockResolvedValue({ data: { owner_user_id: 'test-uuid' }, error: null });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([{ owner_user_id: 'test-uuid' }]),
+    });
     getUser.mockResolvedValue({ data: { user: { id: 'test-uuid' } }, error: null });
 
     const req = new NextRequest('http://localhost/');

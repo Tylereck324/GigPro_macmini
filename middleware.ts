@@ -1,19 +1,37 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/ssr';
 
-// Admin client for checking app_owner (RLS blocks anon/authenticated access)
-function createAdminClient() {
+// Check if owner is configured using direct REST API (Edge compatible)
+async function checkOwnerConfigured(): Promise<boolean> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    return null;
+    return false;
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/app_owner?id=eq.true&select=owner_user_id`,
+      {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      // Table might not exist or other error
+      return false;
+    }
+
+    const data = await res.json();
+    // data is an array, check if there's an owner with a user_id
+    return Array.isArray(data) && data.length > 0 && !!data[0]?.owner_user_id;
+  } catch {
+    return false;
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -30,25 +48,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if owner is configured using admin client (bypasses RLS)
-  const admin = createAdminClient();
-  if (!admin) {
-    // If admin client can't be created (missing env vars), redirect to setup
-    // This handles first-run or misconfigured deployments
-    if (pathname.startsWith('/login')) {
-      return NextResponse.next();
-    }
-    return NextResponse.redirect(new URL('/setup', request.url));
-  }
+  // Check if owner is configured using direct REST call (bypasses RLS with service role)
+  const ownerConfigured = await checkOwnerConfigured();
 
-  const { data: owner, error: ownerError } = await admin
-    .from('app_owner')
-    .select('owner_user_id')
-    .eq('id', true)
-    .maybeSingle();
-
-  // If owner is not configured (table empty or doesn't exist), redirect to setup
-  if (ownerError || !owner?.owner_user_id) {
+  // If owner is not configured, redirect to setup
+  if (!ownerConfigured) {
     // Don't redirect if already going to login (let login handle the redirect)
     if (pathname.startsWith('/login')) {
       return NextResponse.next();
